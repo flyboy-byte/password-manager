@@ -12,6 +12,9 @@ interface PasswordDao {
     @Query("SELECT * FROM passwords")
     fun getAllPasswords(): Flow<List<PasswordEntry>>
 
+    @Query("SELECT * FROM passwords")
+    suspend fun getAllPasswordsSync(): List<PasswordEntry>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPassword(entry: PasswordEntry)
 
