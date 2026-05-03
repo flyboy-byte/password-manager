@@ -32,6 +32,9 @@
             <meta-data
                 android:name="android.autofill"
                 android:resource="@xml/autofill_service_config" />
+            <meta-data
+                android:name="android.autofill.credentials"
+                android:value="true" />
         </service>
     </application>
 

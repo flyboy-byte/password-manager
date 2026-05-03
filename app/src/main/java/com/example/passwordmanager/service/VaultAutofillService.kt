@@ -3,6 +3,7 @@ package com.example.passwordmanager.service
 import android.app.assist.AssistStructure
 import android.os.CancellationSignal
 import android.service.autofill.*
+import android.util.Log
 import android.view.autofill.AutofillId
 import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
@@ -15,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -28,10 +30,14 @@ class VaultAutofillService : AutofillService() {
 
     private val serviceScope = CoroutineScope(Dispatchers.IO)
 
+    companion object {
+        private const val TAG = "VaultAutofill"
+    }
+
     override fun onFillRequest(
         request: FillRequest,
         cancellationSignal: CancellationSignal,
-        callback: FillCallback
+        callback: FillCallback,
     ) {
         val context = request.fillContexts.lastOrNull() ?: return
         val structure = context.structure
@@ -39,19 +45,30 @@ class VaultAutofillService : AutofillService() {
         val parser = AssistStructureParser()
         parser.parse(structure)
 
+        val packageName = structure.activityComponent.packageName
+        val domain = parser.webDomain
+
+        Log.d(TAG, "Fill Request - App: $packageName, Web Domain: $domain")
+        Log.d(TAG, "Found ${parser.usernameNodes.size} username fields and ${parser.passwordNodes.size} password fields")
+
         if (parser.usernameNodes.isEmpty() && parser.passwordNodes.isEmpty()) {
+            Log.d(TAG, "No login fields detected, skipping.")
             callback.onSuccess(null)
             return
         }
 
         serviceScope.launch {
-            val domainOrPackage = parser.webDomain ?: parser.packageName ?: ""
             val allEntries = passwordDao.getAllPasswordsSync()
             
-            // Filter entries matching the domain/package
+            // Log domain for debugging
+            Log.d(TAG, "Searching for matches for: $domain")
+
+            // Smart Filter: Match title against domain OR package name
             val matchedEntries = allEntries.filter { entry ->
-                entry.title.contains(domainOrPackage, ignoreCase = true)
+                isSmartMatch(entry.title, domain, packageName)
             }
+
+            Log.d(TAG, "Matched ${matchedEntries.size} entries from vault")
 
             if (matchedEntries.isEmpty()) {
                 withContext(Dispatchers.Main) {
@@ -67,11 +84,12 @@ class VaultAutofillService : AutofillService() {
                     val decryptedPassword = cryptoManager.decrypt(entry.encryptedPassword)
                     val datasetBuilder = Dataset.Builder()
 
-                    val presentation = RemoteViews(packageName, R.layout.autofill_suggestion).apply {
+                    val presentation = RemoteViews(this@VaultAutofillService.packageName, R.layout.autofill_suggestion).apply {
                         setTextViewText(R.id.autofill_username, entry.username)
                         setTextViewText(R.id.autofill_domain, entry.title)
                     }
 
+                    var addedValue = false
                     // Map the username and password nodes to their AutofillIds
                     parser.usernameNodes.forEach { node ->
                         datasetBuilder.setValue(
@@ -79,6 +97,7 @@ class VaultAutofillService : AutofillService() {
                             AutofillValue.forText(entry.username),
                             presentation
                         )
+                        addedValue = true
                     }
 
                     parser.passwordNodes.forEach { node ->
@@ -87,31 +106,65 @@ class VaultAutofillService : AutofillService() {
                             AutofillValue.forText(String(decryptedPassword)),
                             presentation
                         )
+                        addedValue = true
                     }
 
-                    responseBuilder.addDataset(datasetBuilder.build())
+                    if (addedValue) {
+                        responseBuilder.addDataset(datasetBuilder.build())
+                    }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e(TAG, "Error building dataset for ${entry.title}", e)
                 }
             }
             
-            // For Save: we set save info to prompt for new passwords if none were autofilled
-            val saveInfoBuilder = SaveInfo.Builder(
-                SaveInfo.SAVE_DATA_TYPE_PASSWORD or SaveInfo.SAVE_DATA_TYPE_USERNAME,
-                arrayOf(
-                    *(parser.usernameNodes.mapNotNull { it.autofillId }.toTypedArray()),
-                    *(parser.passwordNodes.mapNotNull { it.autofillId }.toTypedArray())
+            // Allow saving new passwords
+            val ids = (parser.usernameNodes + parser.passwordNodes).mapNotNull { it.autofillId }
+            if (ids.isNotEmpty()) {
+                val saveInfoBuilder = SaveInfo.Builder(
+                    SaveInfo.SAVE_DATA_TYPE_PASSWORD or SaveInfo.SAVE_DATA_TYPE_USERNAME,
+                    ids.toTypedArray()
                 )
-            )
-            responseBuilder.setSaveInfo(saveInfoBuilder.build())
+                responseBuilder.setSaveInfo(saveInfoBuilder.build())
+            }
 
+            val response = responseBuilder.build()
             withContext(Dispatchers.Main) {
-                callback.onSuccess(responseBuilder.build())
+                callback.onSuccess(response)
             }
         }
     }
 
+    private fun isSmartMatch(vaultTitle: String, webDomain: String?, appPackage: String): Boolean {
+        val title = vaultTitle.lowercase(Locale.ROOT).trim()
+        if (title.isEmpty()) return false
+
+        val pkg = appPackage.lowercase(Locale.ROOT).trim()
+        val domain = webDomain?.lowercase(Locale.ROOT)?.removePrefix("www.")?.trim()
+
+        // 1. Exact matches are prioritized
+        if (pkg == title || domain == title) return true
+
+        // 2. Check Package Segments
+        // e.g., vaultTitle="ChatGPT" matches pkg="com.openai.chatgpt"
+        val pkgParts = pkg.split(".")
+            .filter { it !in listOf("com", "org", "net", "android", "google", "apps", "mobile") }
+        if (pkgParts.any { it.contains(title) || title.contains(it) }) return true
+
+        // 3. Check Domain Segments
+        // e.g., vaultTitle="Spotify" matches domain="open.spotify.com"
+        if (domain != null) {
+            val domainParts = domain.split(".")
+            if (domainParts.any { it == title || it.contains(title) || title.contains(it) }) return true
+        }
+
+        // 4. Broad Substring Match (Fallback)
+        if (pkg.contains(title) || title.contains(pkg)) return true
+
+        return false
+    }
+
     override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) {
+        Log.d(TAG, "Save Request Triggered")
         val context = request.fillContexts.lastOrNull() ?: return
         val structure = context.structure
 
@@ -121,15 +174,20 @@ class VaultAutofillService : AutofillService() {
         var username = ""
         var password = ""
 
-        parser.usernameNodes.firstOrNull()?.let { node ->
-            username = node.autofillValue?.textValue?.toString() ?: node.text?.toString() ?: ""
+        // Extract values from nodes
+        parser.usernameNodes.forEach { node ->
+            val value = node.autofillValue?.textValue?.toString() ?: node.text?.toString()
+            if (!value.isNullOrBlank()) username = value
         }
         
-        parser.passwordNodes.firstOrNull()?.let { node ->
-            password = node.autofillValue?.textValue?.toString() ?: node.text?.toString() ?: ""
+        parser.passwordNodes.forEach { node ->
+            val value = node.autofillValue?.textValue?.toString() ?: node.text?.toString()
+            if (!value.isNullOrBlank()) password = value
         }
 
-        val domainOrPackage = parser.webDomain ?: parser.packageName ?: "Unknown App"
+        val domainOrPackage = parser.webDomain ?: structure.activityComponent.packageName ?: "Unknown"
+
+        Log.d(TAG, "Attempting to save: User=$username, Source=$domainOrPackage")
 
         if (username.isNotBlank() && password.isNotBlank()) {
             serviceScope.launch {
@@ -141,17 +199,19 @@ class VaultAutofillService : AutofillService() {
                         encryptedPassword = encryptedPassword
                     )
                     passwordDao.insertPassword(newEntry)
-                    
+                    Log.d(TAG, "Successfully saved new password for $domainOrPackage")
                     withContext(Dispatchers.Main) {
                         callback.onSuccess()
                     }
                 } catch (e: Exception) {
+                    Log.e(TAG, "Failed to save password", e)
                     withContext(Dispatchers.Main) {
                         callback.onFailure(e.message)
                     }
                 }
             }
         } else {
+            Log.d(TAG, "Save aborted: empty username or password")
             callback.onSuccess()
         }
     }
