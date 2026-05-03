@@ -12,6 +12,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPasswordScreen(
+    passwordId: Int? = null,
     onNavigateBack: () -> Unit,
     viewModel: VaultViewModel = hiltViewModel(),
 ) {
@@ -19,10 +20,21 @@ fun AddPasswordScreen(
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    LaunchedEffect(passwordId) {
+        passwordId?.let { id ->
+            val entry = viewModel.getPasswordById(id)
+            entry?.let {
+                title = it.title
+                username = it.username
+                password = viewModel.decryptPassword(it)
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Password") },
+                title = { Text(if (passwordId == null) "Add Password" else "Edit Password") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -84,14 +96,18 @@ fun AddPasswordScreen(
             Button(
                 onClick = {
                     if (title.isNotBlank() && username.isNotBlank() && password.isNotBlank()) {
-                        viewModel.addPassword(title, username, password)
+                        if (passwordId == null) {
+                            viewModel.addPassword(title, username, password)
+                        } else {
+                            viewModel.updatePassword(passwordId, title, username, password)
+                        }
                         onNavigateBack()
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = title.isNotBlank() && username.isNotBlank() && password.isNotBlank()
             ) {
-                Text("Save")
+                Text(if (passwordId == null) "Save" else "Update")
             }
         }
     }

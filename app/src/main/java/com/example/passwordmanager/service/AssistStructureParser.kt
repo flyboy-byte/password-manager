@@ -4,7 +4,6 @@ import android.app.assist.AssistStructure
 
 import android.util.Log
 import android.view.View
-import android.view.autofill.AutofillId
 
 class AssistStructureParser {
     var webDomain: String? = null
@@ -36,7 +35,7 @@ class AssistStructureParser {
             if (nodeText.startsWith("http") || nodeText.contains(".")) {
                 // Heuristic for domain name
                 val possibleDomain = nodeText.substringBefore("/").substringAfter("://").removePrefix("www.")
-                if (possibleDomain.contains(".") && possibleDomain.length > 3) {
+                if (possibleDomain.contains(".") && (possibleDomain.length > 3)) {
                     webDomain = possibleDomain
                     Log.d(TAG, "Heuristic Web Domain: $webDomain")
                 }
@@ -53,26 +52,30 @@ class AssistStructureParser {
         val text = node.text?.toString()?.lowercase() ?: ""
 
         // Check if it's a password field
-        val isPassword = hints.contains(View.AUTOFILL_HINT_PASSWORD) ||
+        val isPassword = (
+            hints.contains(View.AUTOFILL_HINT_PASSWORD) ||
                 idEntry.contains("password") ||
                 hintText.contains("password") ||
                 contentDesc.contains("password") ||
                 className.contains("password", ignoreCase = true) ||
                 text.contains("password") ||
-                (inputType and android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD) != 0 ||
-                (inputType and android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD) != 0 ||
-                (inputType and android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD) != 0
+                ((inputType and android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD) != 0) ||
+                ((inputType and android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD) != 0) ||
+                ((inputType and android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD) != 0)
+            )
 
         // Check if it's a username/email field
-        val isUsername = hints.contains(View.AUTOFILL_HINT_USERNAME) ||
+        val isUsername = (
+            hints.contains(View.AUTOFILL_HINT_USERNAME) ||
                 hints.contains(View.AUTOFILL_HINT_EMAIL_ADDRESS) ||
                 idEntry.contains("username") || idEntry.contains("email") || idEntry.contains("login") ||
                 hintText.contains("username") || hintText.contains("email") ||
                 contentDesc.contains("username") || contentDesc.contains("email") ||
                 className.contains("user", ignoreCase = true) || className.contains("email", ignoreCase = true) ||
                 text.contains("username") || text.contains("email") ||
-                (inputType and android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS) != 0 ||
-                (inputType and android.text.InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS) != 0
+                ((inputType and android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS) != 0) ||
+                ((inputType and android.text.InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS) != 0)
+            )
 
         if (isPassword) {
             passwordNodes.add(node)

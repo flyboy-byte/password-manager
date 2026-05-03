@@ -6,8 +6,11 @@ import com.example.passwordmanager.data.CryptoManager
 import com.example.passwordmanager.data.PasswordDao
 import com.example.passwordmanager.data.PasswordEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -18,9 +21,30 @@ class VaultViewModel @Inject constructor(
     private val cryptoManager: CryptoManager,
 ) : ViewModel() {
 
-    // Expose the list of passwords as a Flow
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+    // Expose the list of passwords as a Flow, filtered by search query
     val passwords: StateFlow<List<PasswordEntry>> = passwordDao.getAllPasswords()
+        .combine(_searchQuery) { list, query ->
+            if (query.isBlank()) {
+                list
+            } else {
+                list.filter {
+                    it.title.contains(query, ignoreCase = true) ||
+                        it.username.contains(query, ignoreCase = true)
+                }
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    suspend fun getPasswordById(id: Int): PasswordEntry? {
+        return passwordDao.getAllPasswordsSync().find { it.id == id }
+    }
 
     fun addPassword(title: String, username: String, plaintext: String) {
         viewModelScope.launch {
@@ -36,6 +60,23 @@ class VaultViewModel @Inject constructor(
                 passwordDao.insertPassword(entry)
             } catch (e: Exception) {
                 // In a real app, emit error state to UI
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun updatePassword(id: Int, title: String, username: String, plaintext: String) {
+        viewModelScope.launch {
+            try {
+                val encrypted = cryptoManager.encrypt(plaintext.toByteArray(Charsets.UTF_8))
+                val entry = PasswordEntry(
+                    id = id,
+                    title = title,
+                    username = username,
+                    encryptedPassword = encrypted
+                )
+                passwordDao.insertPassword(entry)
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }

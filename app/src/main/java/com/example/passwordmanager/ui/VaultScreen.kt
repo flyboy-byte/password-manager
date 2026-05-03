@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,19 +26,34 @@ import kotlinx.coroutines.launch
 @Composable
 fun VaultScreen(
     onNavigateToAdd: () -> Unit,
+    onNavigateToEdit: (Int) -> Unit,
     viewModel: VaultViewModel = hiltViewModel(),
 ) {
     val passwords by viewModel.passwords.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("My Vault") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            Column {
+                TopAppBar(
+                    title = { Text("My Vault") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
-            )
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.updateSearchQuery(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    placeholder = { Text("Search passwords...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToAdd) {
@@ -51,7 +68,7 @@ fun VaultScreen(
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Your vault is empty. Add a password!")
+                Text(if (searchQuery.isBlank()) "Your vault is empty. Add a password!" else "No passwords match your search.")
             }
         } else {
             LazyColumn(
@@ -65,7 +82,9 @@ fun VaultScreen(
                     PasswordCard(
                         entry = entry,
                         viewModel = viewModel,
-                    ) { viewModel.deletePassword(entry) }
+                        onEdit = { onNavigateToEdit(entry.id) },
+                        onDelete = { viewModel.deletePassword(entry) }
+                    )
                 }
             }
         }
@@ -76,6 +95,7 @@ fun VaultScreen(
 fun PasswordCard(
     entry: PasswordEntry,
     viewModel: VaultViewModel,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var isRevealed by remember { mutableStateOf(value = false) }
@@ -117,6 +137,14 @@ fun PasswordCard(
             }
             
             Column(horizontalAlignment = Alignment.End) {
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                    }
+                }
                 if (isRevealed) {
                     Button(
                         onClick = {
@@ -128,9 +156,6 @@ fun PasswordCard(
                     ) {
                         Text("Copy")
                     }
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }

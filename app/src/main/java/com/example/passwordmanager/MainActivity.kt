@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.passwordmanager.ui.AddPasswordScreen
 import com.example.passwordmanager.ui.VaultScreen
 import com.example.passwordmanager.ui.theme.PasswordManagerTheme
@@ -31,11 +33,22 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = navController, startDestination = "vault") {
                         composable("vault") {
                             VaultScreen(
-                                onNavigateToAdd = { navController.navigate("add") }
+                                onNavigateToAdd = { navController.navigate("add") },
+                                onNavigateToEdit = { id -> navController.navigate("add?id=$id") }
                             )
                         }
-                        composable("add") {
+                        composable(
+                            route = "add?id={id}",
+                            arguments = listOf(
+                                navArgument("id") {
+                                    type = NavType.IntType
+                                    defaultValue = -1
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val id = backStackEntry.arguments?.getInt("id") ?: -1
                             AddPasswordScreen(
+                                passwordId = if (id == -1) null else id,
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }

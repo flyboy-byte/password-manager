@@ -1,10 +1,9 @@
 package com.example.passwordmanager.service
 
-import android.app.assist.AssistStructure
 import android.os.CancellationSignal
 import android.service.autofill.*
 import android.util.Log
-import android.view.autofill.AutofillId
+import android.view.View
 import android.view.autofill.AutofillValue
 import android.widget.RemoteViews
 import com.example.passwordmanager.R
@@ -95,7 +94,7 @@ class VaultAutofillService : AutofillService() {
                         datasetBuilder.setValue(
                             node.autofillId!!,
                             AutofillValue.forText(entry.username),
-                            presentation
+                            presentation,
                         )
                         addedValue = true
                     }
@@ -104,7 +103,7 @@ class VaultAutofillService : AutofillService() {
                         datasetBuilder.setValue(
                             node.autofillId!!,
                             AutofillValue.forText(String(decryptedPassword)),
-                            presentation
+                            presentation,
                         )
                         addedValue = true
                     }
@@ -142,7 +141,7 @@ class VaultAutofillService : AutofillService() {
         val domain = webDomain?.lowercase(Locale.ROOT)?.removePrefix("www.")?.trim()
 
         // 1. Exact matches are prioritized
-        if (pkg == title || domain == title) return true
+        if ((pkg == title) || (domain == title)) return true
 
         // 2. Check Package Segments
         // e.g., vaultTitle="ChatGPT" matches pkg="com.openai.chatgpt"
@@ -154,13 +153,11 @@ class VaultAutofillService : AutofillService() {
         // e.g., vaultTitle="Spotify" matches domain="open.spotify.com"
         if (domain != null) {
             val domainParts = domain.split(".")
-            if (domainParts.any { it == title || it.contains(title) || title.contains(it) }) return true
+            if (domainParts.any { (it == title) || it.contains(title) || title.contains(it) }) return true
         }
 
         // 4. Broad Substring Match (Fallback)
-        if (pkg.contains(title) || title.contains(pkg)) return true
-
-        return false
+        return pkg.contains(title) || title.contains(pkg)
     }
 
     override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) {
@@ -185,7 +182,7 @@ class VaultAutofillService : AutofillService() {
             if (!value.isNullOrBlank()) password = value
         }
 
-        val domainOrPackage = parser.webDomain ?: structure.activityComponent.packageName ?: "Unknown"
+        val domainOrPackage = parser.webDomain ?: structure.activityComponent.packageName
 
         Log.d(TAG, "Attempting to save: User=$username, Source=$domainOrPackage")
 
