@@ -82,13 +82,15 @@ class VaultViewModel @Inject constructor(
         }
     }
 
-    fun decryptPassword(entry: PasswordEntry): String {
-        return try {
-            val decryptedBytes = cryptoManager.decrypt(entry.encryptedPassword)
-            String(decryptedBytes, Charsets.UTF_8)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            "Error decrypting"
+    suspend fun decryptPassword(entry: PasswordEntry): String {
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val decryptedBytes = cryptoManager.decrypt(entry.encryptedPassword)
+                String(decryptedBytes, Charsets.UTF_8)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                "Error decrypting"
+            }
         }
     }
 

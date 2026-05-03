@@ -101,8 +101,12 @@ fun PasswordCard(
     var isRevealed by remember { mutableStateOf(value = false) }
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
-    val decryptedPassword = remember(isRevealed) {
-        if (isRevealed) viewModel.decryptPassword(entry) else "••••••••••••"
+    val decryptedPassword by produceState(initialValue = "••••••••••••", key1 = isRevealed) {
+        value = if (isRevealed) {
+            viewModel.decryptPassword(entry)
+        } else {
+            "••••••••••••"
+        }
     }
 
     Card(
