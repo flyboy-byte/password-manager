@@ -1,6 +1,8 @@
 # Password Manager
 
-A native Android password manager built with Kotlin and Jetpack Compose. Passwords are encrypted at rest using the Android Keystore (AES-256-GCM) — the encryption key never leaves the device's secure hardware. This is a vibe-coded project developed iteratively using Android Studio and AI-assisted tools.
+A native Android password manager built with Kotlin and Jetpack Compose. Passwords are encrypted at rest using the Android Keystore (AES-256-GCM) — the encryption key never leaves the device's secure hardware. Includes a system-level autofill service that surfaces credentials directly in other apps' login fields.
+
+This is a vibe-coded project developed iteratively using Android Studio and AI-assisted tools.
 
 ## Features
 
@@ -9,27 +11,45 @@ A native Android password manager built with Kotlin and Jetpack Compose. Passwor
 - **Password generator** — one-tap 16-character strong password generation
 - **Tap to reveal** — passwords shown as `••••••••` until tapped
 - **Copy to clipboard** — copy decrypted password with one button when revealed
-- **Delete** — swipe-free single-tap delete per entry
+- **Delete** — single-tap delete per entry
 - **AES-256-GCM encryption** — passwords encrypted via Android Keystore before being stored in the local Room database
+- **Autofill service** — detects username/password fields in any app or browser, matches saved entries by domain/package name, and fills credentials without leaving the current app. Also prompts to save new credentials when a login form is submitted.
 
 ## Architecture
 
 ```
 com.example.passwordmanager/
-├── VaultApplication.kt          # Hilt app entry point
-├── MainActivity.kt              # Nav host (vault → add routes)
+├── VaultApplication.kt              # @HiltAndroidApp entry point
+├── MainActivity.kt                  # NavHost (vault → add routes)
 ├── data/
-│   ├── PasswordEntry.kt         # Room entity (id, title, username, encryptedPassword)
-│   ├── PasswordDao.kt           # Room DAO — getAllPasswords(), insert, delete
-│   ├── AppDatabase.kt           # Room database (vault_db, v1)
-│   └── CryptoManager.kt        # AES-256-GCM encrypt/decrypt via Android Keystore
+│   ├── PasswordEntry.kt             # Room entity: id, title, username, encryptedPassword
+│   ├── PasswordDao.kt               # getAllPasswords() Flow, getAllPasswordsSync(), insert, delete
+│   ├── AppDatabase.kt               # Room DB ("vault_db", version 1)
+│   └── CryptoManager.kt            # AES-256-GCM via Android Keystore ("vault_key")
 ├── di/
-│   └── DataModule.kt            # Hilt module — provides DB, DAO, CryptoManager
+│   └── DataModule.kt                # Hilt SingletonComponent: CryptoManager, AppDatabase, PasswordDao
+├── service/
+│   ├── VaultAutofillService.kt      # AutofillService: fill & save credentials system-wide
+│   └── AssistStructureParser.kt     # Walks AssistStructure tree, identifies username/password nodes
 └── ui/
-    ├── VaultScreen.kt           # Vault list UI + PasswordCard composable
-    ├── AddPasswordScreen.kt     # Add/generate password form
-    └── VaultViewModel.kt        # Hilt ViewModel — passwords StateFlow, add/delete/decrypt
+    ├── VaultScreen.kt               # Password list, tap-to-reveal, copy, delete + FAB
+    ├── AddPasswordScreen.kt         # Form: title, username, password; generator; save
+    ├── VaultViewModel.kt            # @HiltViewModel; passwords StateFlow; add/delete/decrypt
+    └── theme/
+        ├── Color.kt
+        ├── Theme.kt
+        └── Type.kt
 ```
+
+### Autofill flow
+
+1. Android calls `VaultAutofillService.onFillRequest()` when a login form is detected.
+2. `AssistStructureParser` walks the view tree and collects nodes matching username/email and password hints.
+3. Entries are fetched synchronously from Room and filtered by `title.contains(webDomain or packageName)`.
+4. Matching entries are returned as `Dataset` objects using a `RemoteViews` suggestion chip.
+5. When the user submits a new login, `onSaveRequest()` encrypts and persists the credentials.
+
+> To enable: System Settings → Passwords & accounts → Autofill service → select **Vault Autofill**.
 
 ## Stack
 
@@ -44,6 +64,7 @@ com.example.passwordmanager/
 | Min SDK | Android 7.0 | API 24 |
 | Target SDK | | API 36 |
 | Build tools | AGP | 9.2.0 |
+| JVM | Java 21 | |
 
 ## Getting Started
 
@@ -55,7 +76,7 @@ com.example.passwordmanager/
 3. Let Gradle sync complete.
 4. Run on an emulator (API 24+) or a physical device.
 
-> Encryption uses the Android Keystore. The AES-256-GCM key is hardware-bound and will not survive a factory reset or app reinstall — exported backups are disabled by default for this reason.
+> Encryption uses the Android Keystore. The AES-256-GCM key is hardware-bound and will not survive a factory reset or app reinstall — exported backups are disabled by default.
 
 ## License
 
