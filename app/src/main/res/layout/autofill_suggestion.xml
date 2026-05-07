@@ -3,32 +3,41 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="8dp"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="10dp"
     android:gravity="center_vertical"
-    android:background="@android:color/white">
+    android:background="@drawable/rounded_autofill_bg">
 
     <ImageView
         android:id="@+id/autofill_icon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:src="@android:drawable/ic_secure"
+        android:tint="#1A73E8"
         android:contentDescription="Vault Icon" />
 
-    <TextView
-        android:id="@+id/autofill_username"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:textColor="@android:color/black"
-        android:textSize="16sp"
-        android:textStyle="bold" />
-        
-    <TextView
-        android:id="@+id/autofill_domain"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
-        android:textColor="@android:color/darker_gray"
-        android:textSize="14sp" />
+        android:orientation="vertical"
+        android:layout_marginStart="12dp">
+
+        <TextView
+            android:id="@+id/autofill_username"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#202124"
+            android:textSize="15sp"
+            android:fontFamily="sans-serif-medium"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/autofill_domain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#5F6368"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif" />
+    </LinearLayout>
 
 </LinearLayout>

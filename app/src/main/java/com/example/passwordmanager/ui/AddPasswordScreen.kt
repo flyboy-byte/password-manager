@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.security.SecureRandom
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,6 +20,8 @@ fun AddPasswordScreen(
     var title by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    val secureRandom = remember { SecureRandom() }
 
     LaunchedEffect(passwordId) {
         passwordId?.let { id ->
@@ -82,8 +85,7 @@ fun AddPasswordScreen(
                 onClick = {
                     val charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*"
                     password = (1..16)
-                        .asSequence()
-                        .map { charset.random() }
+                        .map { charset[secureRandom.nextInt(charset.length)] }
                         .joinToString("")
                 },
                 modifier = Modifier.fillMaxWidth()

@@ -1,11 +1,15 @@
 package com.example.passwordmanager.service
 
+import android.app.PendingIntent
+import android.content.Intent
 import android.os.CancellationSignal
 import android.service.autofill.*
 import android.util.Log
-import android.view.View
+import android.view.autofill.AutofillId
 import android.view.autofill.AutofillValue
+import android.view.inputmethod.InlineSuggestionsRequest
 import android.widget.RemoteViews
+import androidx.autofill.inline.v1.InlineSuggestionUi
 import com.example.passwordmanager.R
 import com.example.passwordmanager.data.CryptoManager
 import com.example.passwordmanager.data.PasswordDao
@@ -15,7 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Locale
+import java.lang.reflect.Method
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -38,178 +42,245 @@ class VaultAutofillService : AutofillService() {
         cancellationSignal: CancellationSignal,
         callback: FillCallback,
     ) {
-        val context = request.fillContexts.lastOrNull() ?: return
-        val structure = context.structure
-
-        val parser = AssistStructureParser()
-        parser.parse(structure)
-
-        val packageName = structure.activityComponent.packageName
-        val domain = parser.webDomain
-
-        Log.d(TAG, "Fill Request - App: $packageName, Web Domain: $domain")
-        Log.d(TAG, "Found ${parser.usernameNodes.size} username fields and ${parser.passwordNodes.size} password fields")
-
-        if (parser.usernameNodes.isEmpty() && parser.passwordNodes.isEmpty()) {
-            Log.d(TAG, "No login fields detected, skipping.")
+        val contexts = request.fillContexts
+        if (contexts.isEmpty()) {
             callback.onSuccess(null)
             return
         }
 
         serviceScope.launch {
-            val allEntries = passwordDao.getAllPasswordsSync()
-            
-            // Log domain for debugging
-            Log.d(TAG, "Searching for matches for: $domain")
+            var bestResponse: FillResponse? = null
 
-            // Smart Filter: Match title against domain OR package name
-            val matchedEntries = allEntries.filter { entry ->
-                isSmartMatch(entry.title, domain, packageName)
-            }
+            contexts.forEachIndexed { ctxIndex, ctx ->
+                val structure = ctx.structure
+                val parser = AssistStructureParser()
+                parser.parse(structure)
 
-            Log.d(TAG, "Matched ${matchedEntries.size} entries from vault")
+                val pkg = structure.activityComponent.packageName
+                val domain = parser.webDomain
+                val focusedId = getFocusedIdCompat(ctx)
 
-            if (matchedEntries.isEmpty()) {
-                withContext(Dispatchers.Main) {
-                    callback.onSuccess(null)
-                }
-                return@launch
-            }
-
-            val responseBuilder = FillResponse.Builder()
-
-            for (entry in matchedEntries) {
-                try {
-                    val decryptedPassword = cryptoManager.decrypt(entry.encryptedPassword)
-                    val datasetBuilder = Dataset.Builder()
-
-                    val presentation = RemoteViews(this@VaultAutofillService.packageName, R.layout.autofill_suggestion).apply {
-                        setTextViewText(R.id.autofill_username, entry.username)
-                        setTextViewText(R.id.autofill_domain, entry.title)
-                    }
-
-                    var addedValue = false
-                    // Map the username and password nodes to their AutofillIds
-                    parser.usernameNodes.forEach { node ->
-                        datasetBuilder.setValue(
-                            node.autofillId!!,
-                            AutofillValue.forText(entry.username),
-                            presentation,
-                        )
-                        addedValue = true
-                    }
-
-                    parser.passwordNodes.forEach { node ->
-                        datasetBuilder.setValue(
-                            node.autofillId!!,
-                            AutofillValue.forText(String(decryptedPassword)),
-                            presentation,
-                        )
-                        addedValue = true
-                    }
-
-                    if (addedValue) {
-                        responseBuilder.addDataset(datasetBuilder.build())
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error building dataset for ${entry.title}", e)
-                }
-            }
-            
-            // Allow saving new passwords
-            val ids = (parser.usernameNodes + parser.passwordNodes).mapNotNull { it.autofillId }
-            if (ids.isNotEmpty()) {
-                val saveInfoBuilder = SaveInfo.Builder(
-                    SaveInfo.SAVE_DATA_TYPE_PASSWORD or SaveInfo.SAVE_DATA_TYPE_USERNAME,
-                    ids.toTypedArray()
+                // Credential Metadata Evidence Gathering
+                val inputTypeSummary = parser.inputTypeMap.entries.joinToString(", ") { "${it.key}:${it.value}" }
+                Log.d(
+                    TAG,
+                    "EVIDENCE [ctx=$ctxIndex]: pkg=$pkg domain=$domain focusedId=$focusedId " +
+                        "htmlCount=${parser.htmlInfoCount} inputTypes=[$inputTypeSummary] " +
+                        "usernames=${parser.usernameNodes.size} passwords=${parser.passwordNodes.size}"
                 )
-                responseBuilder.setSaveInfo(saveInfoBuilder.build())
+
+                if (parser.usernameNodes.isEmpty() && parser.passwordNodes.isEmpty()) {
+                    Log.d(TAG, "ctx[$ctxIndex]: No credential fields found, skipping dataset building.")
+                    return@forEachIndexed
+                }
+
+                val responseBuilder = FillResponse.Builder()
+                val allEntries = passwordDao.getAllPasswordsSync()
+                val rankedMatches = SmartMatcher.rankMatches(allEntries, domain, pkg)
+                val matchedEntries = rankedMatches.map { it.entry }
+
+                Log.d(TAG, "ctx[$ctxIndex]: matched=${matchedEntries.size} entries for domain=$domain pkg=$pkg")
+
+                val inlineRequest = request.inlineSuggestionsRequest
+
+                if (matchedEntries.isEmpty()) {
+                    val feedbackTitle = if (domain != null) "No match for $domain" else "No match for this app"
+                    addFeedbackDataset(responseBuilder, feedbackTitle, parser, inlineRequest)
+                } else {
+                    for (entry in matchedEntries) {
+                        try {
+                            val decryptedPassword = cryptoManager.decrypt(entry.encryptedPassword)
+                            addPasswordDataset(responseBuilder, entry, String(decryptedPassword), parser, inlineRequest)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "ctx[$ctxIndex]: Decryption/Dataset error", e)
+                        }
+                    }
+                }
+
+                val ids = (parser.usernameNodes + parser.passwordNodes).mapNotNull { it.autofillId }
+                if (ids.isNotEmpty()) {
+                    val saveInfoBuilder = SaveInfo.Builder(
+                        SaveInfo.SAVE_DATA_TYPE_PASSWORD or SaveInfo.SAVE_DATA_TYPE_USERNAME,
+                        ids.toTypedArray(),
+                    )
+                    // Modern flag: trigger save even if views just become invisible (e.g. navigation)
+                    saveInfoBuilder.setFlags(SaveInfo.FLAG_SAVE_ON_ALL_VIEWS_INVISIBLE)
+                    responseBuilder.setSaveInfo(saveInfoBuilder.build())
+                }
+
+                val currentResponse = try { responseBuilder.build() } catch (e: Exception) { null }
+                
+                // If this context has the focused field, it's our best bet.
+                if (currentResponse != null && (bestResponse == null || focusedId != null)) {
+                    bestResponse = currentResponse
+                }
             }
 
-            val response = responseBuilder.build()
             withContext(Dispatchers.Main) {
-                callback.onSuccess(response)
+                callback.onSuccess(bestResponse)
             }
         }
     }
 
-    private fun isSmartMatch(vaultTitle: String, webDomain: String?, appPackage: String): Boolean {
-        val title = vaultTitle.lowercase(Locale.ROOT).trim()
-        if (title.isEmpty()) return false
-
-        val pkg = appPackage.lowercase(Locale.ROOT).trim()
-        val domain = webDomain?.lowercase(Locale.ROOT)?.removePrefix("www.")?.trim()
-
-        // 1. Exact matches are prioritized
-        if ((pkg == title) || (domain == title)) return true
-
-        // 2. Check Package Segments
-        // e.g., vaultTitle="ChatGPT" matches pkg="com.openai.chatgpt"
-        val pkgParts = pkg.split(".")
-            .filter { it !in listOf("com", "org", "net", "android", "google", "apps", "mobile") }
-        if (pkgParts.any { it.contains(title) || title.contains(it) }) return true
-
-        // 3. Check Domain Segments
-        // e.g., vaultTitle="Spotify" matches domain="open.spotify.com"
-        if (domain != null) {
-            val domainParts = domain.split(".")
-            if (domainParts.any { (it == title) || it.contains(title) || title.contains(it) }) return true
+    private fun addPasswordDataset(
+        builder: FillResponse.Builder,
+        entry: PasswordEntry,
+        decryptedPassword: String,
+        parser: AssistStructureParser,
+        inlineRequest: InlineSuggestionsRequest?,
+    ) {
+        val datasetBuilder = Dataset.Builder()
+        val presentation = RemoteViews(packageName, R.layout.autofill_suggestion).apply {
+            setTextViewText(R.id.autofill_username, entry.username)
+            setTextViewText(R.id.autofill_domain, entry.title)
         }
 
-        // 4. Broad Substring Match (Fallback)
-        return pkg.contains(title) || title.contains(pkg)
+        // Add Inline Suggestion support if requested by the system/keyboard (Android 11+)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R &&
+            inlineRequest != null && inlineRequest.inlinePresentationSpecs.isNotEmpty()
+        ) {
+            try {
+                val spec = inlineRequest.inlinePresentationSpecs[0]
+                val dummyIntent = PendingIntent.getActivity(this, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+                val inlinePresentation = InlinePresentation(
+                    InlineSuggestionUi.newContentBuilder(dummyIntent)
+                        .setTitle(entry.username)
+                        .setSubtitle(entry.title)
+                        .build().slice,
+                    spec,
+                    false
+                )
+                datasetBuilder.setInlinePresentation(inlinePresentation)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to build inline presentation", e)
+            }
+        }
+
+        parser.usernameNodes.forEach { node ->
+            node.autofillId?.let { id ->
+                datasetBuilder.setValue(id, AutofillValue.forText(entry.username), presentation)
+            }
+        }
+        parser.passwordNodes.forEach { node ->
+            node.autofillId?.let { id ->
+                datasetBuilder.setValue(id, AutofillValue.forText(decryptedPassword), presentation)
+            }
+        }
+        builder.addDataset(datasetBuilder.build())
+    }
+
+    private fun addFeedbackDataset(
+        builder: FillResponse.Builder,
+        message: String,
+        parser: AssistStructureParser,
+        inlineRequest: InlineSuggestionsRequest?,
+    ) {
+        val datasetBuilder = Dataset.Builder()
+        val presentation = RemoteViews(packageName, R.layout.autofill_suggestion).apply {
+            setTextViewText(R.id.autofill_username, "Vault")
+            setTextViewText(R.id.autofill_domain, message)
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R &&
+            inlineRequest != null && inlineRequest.inlinePresentationSpecs.isNotEmpty()
+        ) {
+            try {
+                val spec = inlineRequest.inlinePresentationSpecs[0]
+                val dummyIntent = PendingIntent.getActivity(this, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+                val inlinePresentation = InlinePresentation(
+                    InlineSuggestionUi.newContentBuilder(dummyIntent)
+                        .setTitle("Vault")
+                        .setSubtitle(message)
+                        .build().slice,
+                    spec,
+                    false
+                )
+                datasetBuilder.setInlinePresentation(inlinePresentation)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to build feedback inline presentation", e)
+            }
+        }
+
+        val firstId = parser.usernameNodes.firstOrNull()?.autofillId ?: parser.passwordNodes.firstOrNull()?.autofillId
+        firstId?.let { id ->
+            datasetBuilder.setValue(id, null, presentation)
+            builder.addDataset(datasetBuilder.build())
+        }
     }
 
     override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) {
-        Log.d(TAG, "Save Request Triggered")
         val context = request.fillContexts.lastOrNull() ?: return
-        val structure = context.structure
-
         val parser = AssistStructureParser()
-        parser.parse(structure)
+        parser.parse(context.structure)
 
         var username = ""
         var password = ""
 
-        // Extract values from nodes
         parser.usernameNodes.forEach { node ->
             val value = node.autofillValue?.textValue?.toString() ?: node.text?.toString()
             if (!value.isNullOrBlank()) username = value
         }
-        
         parser.passwordNodes.forEach { node ->
             val value = node.autofillValue?.textValue?.toString() ?: node.text?.toString()
             if (!value.isNullOrBlank()) password = value
         }
 
-        val domainOrPackage = parser.webDomain ?: structure.activityComponent.packageName
+        val source = parser.webDomain ?: context.structure.activityComponent.packageName
 
-        Log.d(TAG, "Attempting to save: User=$username, Source=$domainOrPackage")
+        Log.d(TAG, "onSaveRequest: source=$source usernameBlank=${username.isBlank()} passwordBlank=${password.isBlank()}")
 
         if (username.isNotBlank() && password.isNotBlank()) {
             serviceScope.launch {
                 try {
-                    val encryptedPassword = cryptoManager.encrypt(password.toByteArray())
-                    val newEntry = PasswordEntry(
-                        title = domainOrPackage,
-                        username = username,
-                        encryptedPassword = encryptedPassword
-                    )
-                    passwordDao.insertPassword(newEntry)
-                    Log.d(TAG, "Successfully saved new password for $domainOrPackage")
-                    withContext(Dispatchers.Main) {
-                        callback.onSuccess()
+                    val encrypted = cryptoManager.encrypt(password.toByteArray())
+
+                    val existing = passwordDao.getAllPasswordsSync().firstOrNull {
+                        it.title.equals(source, ignoreCase = true) && it.username.equals(username, ignoreCase = true)
                     }
+
+                    if (existing != null) {
+                        Log.d(TAG, "Updating existing credential id=${existing.id} title=${existing.title} username=${existing.username}")
+                        passwordDao.insertPassword(
+                            PasswordEntry(
+                                id = existing.id,
+                                title = source,
+                                username = username,
+                                encryptedPassword = encrypted,
+                            ),
+                        )
+                    } else {
+                        Log.d(TAG, "Inserting new credential title=$source username=$username")
+                        passwordDao.insertPassword(
+                            PasswordEntry(
+                                title = source,
+                                username = username,
+                                encryptedPassword = encrypted,
+                            ),
+                        )
+                    }
+
+                    withContext(Dispatchers.Main) { callback.onSuccess() }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to save password", e)
-                    withContext(Dispatchers.Main) {
-                        callback.onFailure(e.message)
-                    }
+                    Log.e(TAG, "onSaveRequest failed", e)
+                    withContext(Dispatchers.Main) { callback.onFailure(e.message) }
                 }
             }
         } else {
-            Log.d(TAG, "Save aborted: empty username or password")
+            Log.d(TAG, "onSaveRequest skipped insert: missing username or password")
             callback.onSuccess()
+        }
+    }
+
+    /**
+     * Evidence-gathering helper: obtain focusedId via reflection so we compile with minSdk 26.
+     */
+    private fun getFocusedIdCompat(ctx: FillContext): AutofillId? {
+        return try {
+            val m: Method = FillContext::class.java.getDeclaredMethod("getFocusedId")
+            @Suppress("UNCHECKED_CAST")
+            m.invoke(ctx) as? AutofillId
+        } catch (_: Throwable) {
+            null
         }
     }
 }
