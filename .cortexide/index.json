@@ -1,0 +1,1004 @@
+[
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/README.md",
+    "symbols": [],
+    "snippet": "# Password Manager\n\nA native Android password manager built with Kotlin and Jetpack Compose. Passwords are encrypted at rest using the Android Keystore (AES-256-GCM) — the encryption key never leaves the device's secure hardware. Includes a system-level autofill service that surfaces credentials directly in other apps' login fields.\n\nThis is a vibe-coded project developed iteratively using Android Studio and AI-assisted tools.\n\n## Features\n\n- **Vault screen** — scrollable list of all saved passwords\n- **Add password screen** — title/website, username, and password fields\n- **Password generator** — one-tap 16-character strong password generation\n- **Tap to reveal** — passwords shown as `••••••••` until tapped\n- **Copy to clipboard** — copy decrypted password with one button when revealed\n- ",
+    "snippetStartLine": 1,
+    "snippetEndLine": 14,
+    "chunks": [
+      {
+        "text": "# Password Manager\n\nA native Android password manager built with Kotlin and Jetpack Compose. Passwords are encrypted at rest using the Android Keystore (AES-256-GCM) — the encryption key never leaves the device's secure hardware. Includes a system-level autofill service that surfaces credentials directly in other apps' login fields.\n\nThis is a vibe-coded project developed iteratively using Android Studio and AI-assisted tools.\n\n## Features\n\n- **Vault screen** — scrollable list of all saved passwords\n- **Add password screen** — title/website, username, and password fields\n- **Password generator",
+        "startLine": 1,
+        "endLine": 11
+      },
+      {
+        "text": "ords\n- **Add password screen** — title/website, username, and password fields\n- **Password generator** — one-tap 16-character strong password generation\n- **Tap to reveal** — passwords shown as `••••••••` until tapped\n- **Copy to clipboard** — copy decrypted password with one button when revealed\n- **Delete** — single-tap delete per entry\n- **AES-256-GCM encryption** — passwords encrypted via Android Keystore before being stored in the local Room database\n- **Autofill service** — detects username/password fields in any app or browser, matches saved entries by domain/package name, and fills cre",
+        "startLine": 9,
+        "endLine": 16
+      },
+      {
+        "text": "e/password fields in any app or browser, matches saved entries by domain/package name, and fills credentials without leaving the current app. Also prompts to save new credentials when a login form is submitted.\n\n## Architecture\n\n```\ncom.example.passwordmanager/\n├── VaultApplication.kt              # @HiltAndroidApp entry point\n├── MainActivity.kt                  # NavHost (vault → add routes)\n├── data/\n│   ├── PasswordEntry.kt             # Room entity: id, title, username, encryptedPassword\n│   ├── PasswordDao.kt               # getAllPasswords() Flow, getAllPasswordsSync(), insert, delete\n│",
+        "startLine": 16,
+        "endLine": 27
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/androidTest/java/com/example/passwordmanager/ExampleInstrumentedTest.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager\n\nimport androidx.test.platform.app.InstrumentationRegistry\nimport androidx.test.ext.junit.runners.AndroidJUnit4\n\nimport org.junit.Test\nimport org.junit.runner.RunWith\n\nimport org.junit.Assert.*\n\n/**\n * Instrumented test, which will execute on an Android device.\n *\n * See [testing documentation](http://d.android.com/tools/testing).\n */\n@RunWith(AndroidJUnit4::cla",
+    "snippetStartLine": 1,
+    "snippetEndLine": 16,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager\n\nimport androidx.test.platform.app.InstrumentationRegistry\nimport androidx.test.ext.junit.runners.AndroidJUnit4\n\nimport org.junit.Test\nimport org.junit.runner.RunWith\n\nimport org.junit.Assert.*\n\n/**\n * Instrumented test, which will execute on an Android device.\n *\n * See [testing documentation](http://d.android.com/tools/testing).\n */\n@RunWith(AndroidJUnit4::cla",
+        "startLine": 1,
+        "endLine": 16
+      },
+      {
+        "text": "* See [testing documentation](http://d.android.com/tools/testing).\n */\n@RunWith(AndroidJUnit4::class)\nclass ExampleInstrumentedTest {\n    @Test\n    fun useAppContext() {\n        // Context of the app under test.\n        val appContext = InstrumentationRegistry.getInstrumentation().targetContext\n        assertEquals(\"com.example.passwordmanager\", appContext.packageName)\n    }\n}",
+        "startLine": 13,
+        "endLine": 24
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/MainActivity.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager\n\nimport android.os.Bundle\nimport android.view.WindowManager\nimport androidx.activity.ComponentActivity\nimport androidx.activity.compose.setContent\nimport androidx.activity.enableEdgeToEdge\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Surface\nimport androidx.compose.ui.Modi",
+    "snippetStartLine": 1,
+    "snippetEndLine": 11,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager\n\nimport android.os.Bundle\nimport android.view.WindowManager\nimport androidx.activity.ComponentActivity\nimport androidx.activity.compose.setContent\nimport androidx.activity.enableEdgeToEdge\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Surface\nimport androidx.compose.ui.Modi",
+        "startLine": 1,
+        "endLine": 11
+      },
+      {
+        "text": "se.material3.MaterialTheme\nimport androidx.compose.material3.Surface\nimport androidx.compose.ui.Modifier\nimport androidx.navigation.NavType\nimport androidx.navigation.compose.NavHost\nimport androidx.navigation.compose.composable\nimport androidx.navigation.compose.rememberNavController\nimport androidx.navigation.navArgument\nimport com.example.passwordmanager.ui.AddPasswordScreen\nimport com.example.",
+        "startLine": 9,
+        "endLine": 18
+      },
+      {
+        "text": "x.navigation.navArgument\nimport com.example.passwordmanager.ui.AddPasswordScreen\nimport com.example.passwordmanager.ui.VaultScreen\nimport com.example.passwordmanager.ui.theme.PasswordManagerTheme\nimport dagger.hilt.android.AndroidEntryPoint\n\n@AndroidEntryPoint\nclass MainActivity : ComponentActivity() {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceSta",
+        "startLine": 16,
+        "endLine": 25
+      },
+      {
+        "text": ") {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState)\n        // Prevent screenshots and screen recording for security\n        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)\n        \n        enableEdgeToEdge()\n        setContent {\n            PasswordManagerTheme {\n                Surface(\n                    modifier = Modifier.fillMaxSiz",
+        "startLine": 23,
+        "endLine": 33
+      },
+      {
+        "text": "PasswordManagerTheme {\n                Surface(\n                    modifier = Modifier.fillMaxSize(),\n                    color = MaterialTheme.colorScheme.background\n                ) {\n                    val navController = rememberNavController()\n                    NavHost(navController = navController, startDestination = \"vault\") {\n                        composable(\"vault\") {",
+        "startLine": 31,
+        "endLine": 39
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/VaultApplication.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager\n\nimport android.app.Application\nimport dagger.hilt.android.HiltAndroidApp\n\n@HiltAndroidApp\nclass VaultApplication : Application()",
+    "snippetStartLine": 1,
+    "snippetEndLine": 8,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager\n\nimport android.app.Application\nimport dagger.hilt.android.HiltAndroidApp\n\n@HiltAndroidApp\nclass VaultApplication : Application()",
+        "startLine": 1,
+        "endLine": 8
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/data/AppDatabase.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.data\n\nimport androidx.room.Database\nimport androidx.room.RoomDatabase\n\n@Database(entities = [PasswordEntry::class], version = 1, exportSchema = false)\nabstract class AppDatabase : RoomDatabase() {\n    abstract fun passwordDao(): PasswordDao\n}",
+    "snippetStartLine": 1,
+    "snippetEndLine": 10,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.data\n\nimport androidx.room.Database\nimport androidx.room.RoomDatabase\n\n@Database(entities = [PasswordEntry::class], version = 1, exportSchema = false)\nabstract class AppDatabase : RoomDatabase() {\n    abstract fun passwordDao(): PasswordDao\n}",
+        "startLine": 1,
+        "endLine": 10
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/data/CryptoManager.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.data\n\nimport android.security.keystore.KeyGenParameterSpec\nimport android.security.keystore.KeyProperties\nimport java.security.KeyStore\nimport javax.crypto.Cipher\nimport javax.crypto.KeyGenerator\nimport javax.crypto.SecretKey\nimport javax.crypto.spec.GCMParameterSpec\n\nclass CryptoManager {\n\n    private val keyStore = KeyStore.getInstance(\"AndroidKeyStore\").apply",
+    "snippetStartLine": 1,
+    "snippetEndLine": 13,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.data\n\nimport android.security.keystore.KeyGenParameterSpec\nimport android.security.keystore.KeyProperties\nimport java.security.KeyStore\nimport javax.crypto.Cipher\nimport javax.crypto.KeyGenerator\nimport javax.crypto.SecretKey\nimport javax.crypto.spec.GCMParameterSpec\n\nclass CryptoManager {\n\n    private val keyStore = KeyStore.getInstance(\"AndroidKeyStore\").apply",
+        "startLine": 1,
+        "endLine": 13
+      },
+      {
+        "text": "pec\n\nclass CryptoManager {\n\n    private val keyStore = KeyStore.getInstance(\"AndroidKeyStore\").apply {\n        load(null)\n    }\n\n    private val encryptCipher get() = Cipher.getInstance(TRANSFORMATION).apply {\n        init(Cipher.ENCRYPT_MODE, getKey())\n    }\n\n    private fun getDecryptCipherForIv(iv: ByteArray): Cipher {\n        return Cipher.getInstance(TRANSFORMATION).apply {\n            init(C",
+        "startLine": 9,
+        "endLine": 23
+      },
+      {
+        "text": "v: ByteArray): Cipher {\n        return Cipher.getInstance(TRANSFORMATION).apply {\n            init(Cipher.DECRYPT_MODE, getKey(), GCMParameterSpec(128, iv))\n        }\n    }\n\n    private fun getKey(): SecretKey {\n        val existingKey = keyStore.getEntry(\"vault_key\", null) as? KeyStore.SecretKeyEntry\n        return existingKey?.secretKey ?: createKey()\n    }\n\n    private fun createKey(): SecretKe",
+        "startLine": 21,
+        "endLine": 32
+      },
+      {
+        "text": "ry\n        return existingKey?.secretKey ?: createKey()\n    }\n\n    private fun createKey(): SecretKey {\n        return KeyGenerator.getInstance(ALGORITHM).apply {\n            init(\n                KeyGenParameterSpec.Builder(\n                    \"vault_key\",\n                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,\n                )\n                    .setBlockModes(BLOC",
+        "startLine": 28,
+        "endLine": 39
+      },
+      {
+        "text": "_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,\n                )\n                    .setBlockModes(BLOCK_MODE)\n                    .setEncryptionPaddings(PADDING)\n                    .setUserAuthenticationRequired(false)\n                    .setRandomizedEncryptionRequired(true)\n                    .build(),\n            )\n        }.generateKey()\n    }\n\n    fun encrypt(bytes: ByteArray): ByteArray {",
+        "startLine": 37,
+        "endLine": 49
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/data/PasswordDao.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.data\n\nimport androidx.room.Dao\nimport androidx.room.Delete\nimport androidx.room.Insert\nimport androidx.room.OnConflictStrategy\nimport androidx.room.Query\nimport kotlinx.coroutines.flow.Flow\n\n@Dao\ninterface PasswordDao {\n    @Query(\"SELECT * FROM passwords\")\n    fun getAllPasswords(): Flow<List<PasswordEntry>>\n\n    @Query(\"SELECT * FROM passwords\")\n    suspend fu",
+    "snippetStartLine": 1,
+    "snippetEndLine": 16,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.data\n\nimport androidx.room.Dao\nimport androidx.room.Delete\nimport androidx.room.Insert\nimport androidx.room.OnConflictStrategy\nimport androidx.room.Query\nimport kotlinx.coroutines.flow.Flow\n\n@Dao\ninterface PasswordDao {\n    @Query(\"SELECT * FROM passwords\")\n    fun getAllPasswords(): Flow<List<PasswordEntry>>\n\n    @Query(\"SELECT * FROM passwords\")\n    suspend fu",
+        "startLine": 1,
+        "endLine": 16
+      },
+      {
+        "text": "n getAllPasswords(): Flow<List<PasswordEntry>>\n\n    @Query(\"SELECT * FROM passwords\")\n    suspend fun getAllPasswordsSync(): List<PasswordEntry>\n\n    @Insert(onConflict = OnConflictStrategy.REPLACE)\n    suspend fun insertPassword(entry: PasswordEntry)\n\n    @Delete\n    suspend fun deletePassword(entry: PasswordEntry)\n}",
+        "startLine": 13,
+        "endLine": 24
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/data/PasswordEntry.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.data\n\nimport androidx.room.Entity\nimport androidx.room.PrimaryKey\n\n@Entity(tableName = \"passwords\")\ndata class PasswordEntry(\n    @PrimaryKey(autoGenerate = true)\n    val id: Int = 0,\n    val title: String,\n    val username: String,\n    val encryptedPassword: ByteArray\n) {\n    override fun equals(other: Any?): Boolean {\n        if (this === other) return true\n  ",
+    "snippetStartLine": 1,
+    "snippetEndLine": 16,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.data\n\nimport androidx.room.Entity\nimport androidx.room.PrimaryKey\n\n@Entity(tableName = \"passwords\")\ndata class PasswordEntry(\n    @PrimaryKey(autoGenerate = true)\n    val id: Int = 0,\n    val title: String,\n    val username: String,\n    val encryptedPassword: ByteArray\n) {\n    override fun equals(other: Any?): Boolean {\n        if (this === other) return true",
+        "startLine": 1,
+        "endLine": 16
+      },
+      {
+        "text": "Array\n) {\n    override fun equals(other: Any?): Boolean {\n        if (this === other) return true\n        if (javaClass != other?.javaClass) return false\n\n        other as PasswordEntry\n\n        if (id != other.id) return false\n        if (title != other.title) return false\n        if (username != other.username) return false\n        if (!encryptedPassword.contentEquals(other.encryptedPassword)) r",
+        "startLine": 12,
+        "endLine": 23
+      },
+      {
+        "text": "ther.username) return false\n        if (!encryptedPassword.contentEquals(other.encryptedPassword)) return false\n\n        return true\n    }\n\n    override fun hashCode(): Int {\n        var result = id\n        result = 31 * result + title.hashCode()\n        result = 31 * result + username.hashCode()\n        result = 31 * result + encryptedPassword.contentHashCode()\n        return result\n    }\n}",
+        "startLine": 22,
+        "endLine": 36
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/di/DataModule.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.di\n\nimport android.content.Context\nimport androidx.room.Room\nimport com.example.passwordmanager.data.AppDatabase\nimport com.example.passwordmanager.data.CryptoManager\nimport com.example.passwordmanager.data.PasswordDao\nimport dagger.Module\nimport dagger.Provides\nimport dagger.hilt.InstallIn\nimport dagger.hilt.android.qualifiers.ApplicationContext\nimport dagger.h",
+    "snippetStartLine": 1,
+    "snippetEndLine": 12,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.di\n\nimport android.content.Context\nimport androidx.room.Room\nimport com.example.passwordmanager.data.AppDatabase\nimport com.example.passwordmanager.data.CryptoManager\nimport com.example.passwordmanager.data.PasswordDao\nimport dagger.Module\nimport dagger.Provides\nimport dagger.hilt.InstallIn\nimport dagger.hilt.android.qualifiers.ApplicationContext\nimport dagger.h",
+        "startLine": 1,
+        "endLine": 12
+      },
+      {
+        "text": "mport dagger.hilt.InstallIn\nimport dagger.hilt.android.qualifiers.ApplicationContext\nimport dagger.hilt.components.SingletonComponent\nimport javax.inject.Singleton\n\n@Module\n@InstallIn(SingletonComponent::class)\nobject DataModule {\n\n    @Provides\n    @Singleton\n    fun provideCryptoManager(): CryptoManager {\n        return CryptoManager()\n    }\n\n    @Provides\n    @Singleton\n    fun provideAppDataba",
+        "startLine": 10,
+        "endLine": 27
+      },
+      {
+        "text": "anager {\n        return CryptoManager()\n    }\n\n    @Provides\n    @Singleton\n    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {\n        return Room.databaseBuilder(\n            context,\n            AppDatabase::class.java,\n            \"vault_db\"\n        ).build()\n    }\n\n    @Provides\n    fun providePasswordDao(database: AppDatabase): PasswordDao {\n        return databas",
+        "startLine": 21,
+        "endLine": 37
+      },
+      {
+        "text": "@Provides\n    fun providePasswordDao(database: AppDatabase): PasswordDao {\n        return database.passwordDao()\n    }\n}",
+        "startLine": 35,
+        "endLine": 40
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/service/AssistStructureParser.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.service\n\nimport android.app.assist.AssistStructure\nimport android.util.Log\nimport android.view.View\n\nclass AssistStructureParser {\n    var webDomain: String? = null\n    var usernameNodes = mutableListOf<AssistStructure.ViewNode>()\n    var passwordNodes = mutableListOf<AssistStructure.ViewNode>()\n\n    // Evidence gathering metadata\n    var htmlInfoCount = 0\n    v",
+    "snippetStartLine": 1,
+    "snippetEndLine": 14,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.service\n\nimport android.app.assist.AssistStructure\nimport android.util.Log\nimport android.view.View\n\nclass AssistStructureParser {\n    var webDomain: String? = null\n    var usernameNodes = mutableListOf<AssistStructure.ViewNode>()\n    var passwordNodes = mutableListOf<AssistStructure.ViewNode>()\n\n    // Evidence gathering metadata\n    var htmlInfoCount = 0\n    v",
+        "startLine": 1,
+        "endLine": 14
+      },
+      {
+        "text": "stOf<AssistStructure.ViewNode>()\n\n    // Evidence gathering metadata\n    var htmlInfoCount = 0\n    var inputTypeMap = mutableMapOf<Int, Int>()\n\n    companion object {\n        private const val TAG = \"AssistParser\"\n\n        private val BROWSER_PACKAGES = setOf(\n            \"com.android.chrome\",\n            \"com.chrome.beta\",\n            \"com.chrome.dev\",\n            \"com.chrome.canary\",",
+        "startLine": 10,
+        "endLine": 24
+      },
+      {
+        "text": "\"com.chrome.beta\",\n            \"com.chrome.dev\",\n            \"com.chrome.canary\",\n            \"org.mozilla.firefox\",\n            \"org.mozilla.focus\",\n            \"com.sec.android.app.sbrowser\",\n            \"com.microsoft.emmx\",\n            \"com.opera.browser\",\n            \"com.brave.browser\"\n        )\n\n        private val URL_BAR_IDS = listOf(\n            \"url_bar\",\n            \"omnibox\",",
+        "startLine": 21,
+        "endLine": 35
+      },
+      {
+        "text": ")\n\n        private val URL_BAR_IDS = listOf(\n            \"url_bar\",\n            \"omnibox\",\n            \"location_bar\",\n            \"search_box\",\n            \"address_bar\"\n        )\n\n        // Denylist for Chrome/browser shell IDs that must never be treated as username/password fields.\n        private val CHROME_SHELL_ID_DENYLIST = setOf(\n            \"custom_tabs_handle_view_stub\",",
+        "startLine": 30,
+        "endLine": 43
+      },
+      {
+        "text": "private val CHROME_SHELL_ID_DENYLIST = setOf(\n            \"custom_tabs_handle_view_stub\",\n            \"url_bar\",\n            \"toolbar\",\n            \"toolbar_container\",\n            \"location_bar_frame_layout\",\n            \"title_url_container\",\n            \"message_container\",\n            \"tab_switcher_view_holder_stub\",\n            \"tab_hover_card_holder_stub\",\n            \"compositor_view_hol",
+        "startLine": 41,
+        "endLine": 51
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/service/SmartMatcher.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.service\n\nimport android.util.Log\nimport com.example.passwordmanager.data.PasswordEntry\nimport java.util.Locale\n\nobject SmartMatcher {\n\n    private const val TAG = \"SmartMatcher\"\n\n    private val NOISE_SEGMENTS = setOf(\n        \"com\", \"org\", \"net\", \"io\", \"app\", \"dev\",\n        \"android\", \"google\", \"apps\", \"mobile\",\n        \"www\", \"m\", \"login\", \"signin\", \"auth\"\n   ",
+    "snippetStartLine": 1,
+    "snippetEndLine": 15,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.service\n\nimport android.util.Log\nimport com.example.passwordmanager.data.PasswordEntry\nimport java.util.Locale\n\nobject SmartMatcher {\n\n    private const val TAG = \"SmartMatcher\"\n\n    private val NOISE_SEGMENTS = setOf(\n        \"com\", \"org\", \"net\", \"io\", \"app\", \"dev\",\n        \"android\", \"google\", \"apps\", \"mobile\",\n        \"www\", \"m\", \"login\", \"signin\", \"auth\"",
+        "startLine": 1,
+        "endLine": 15
+      },
+      {
+        "text": "v\",\n        \"android\", \"google\", \"apps\", \"mobile\",\n        \"www\", \"m\", \"login\", \"signin\", \"auth\"\n    )\n\n    data class MatchResult(\n        val entry: PasswordEntry,\n        val score: Int,\n        val reason: String,\n    )\n\n    fun isMatch(vaultTitle: String, webDomain: String?, appPackage: String): Boolean {\n        return scoreMatch(vaultTitle, webDomain, appPackage) > 0\n    }\n\n    fun rankMatc",
+        "startLine": 12,
+        "endLine": 27
+      },
+      {
+        "text": ": Boolean {\n        return scoreMatch(vaultTitle, webDomain, appPackage) > 0\n    }\n\n    fun rankMatches(entries: List<PasswordEntry>, webDomain: String?, appPackage: String): List<MatchResult> {\n        val results = entries.map { entry ->\n            val score = scoreMatch(entry.title, webDomain, appPackage)\n            val reason = explainMatch(entry.title, webDomain, appPackage)\n            Mat",
+        "startLine": 23,
+        "endLine": 31
+      },
+      {
+        "text": "ppPackage)\n            val reason = explainMatch(entry.title, webDomain, appPackage)\n            MatchResult(entry = entry, score = score, reason = reason)\n        }.filter { it.score > 0 }\n            .sortedByDescending { it.score }\n\n        Log.d(TAG, \"rankMatches: domain=$webDomain pkg=$appPackage total=${entries.size} matched=${results.size}\")\n\n        // Extra diagnostics: log first N reject",
+        "startLine": 29,
+        "endLine": 37
+      },
+      {
+        "text": "ge total=${entries.size} matched=${results.size}\")\n\n        // Extra diagnostics: log first N rejections with reason so we know why nothing matches.\n        entries.take(10).forEach { entry ->\n            val score = scoreMatch(entry.title, webDomain, appPackage)\n            if (score <= 0) {\n                Log.d(TAG, \"reject: title=${entry.title} score=$score reason=${explainMatch(entry.title, w",
+        "startLine": 35,
+        "endLine": 41
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/service/VaultAutofillService.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.service\n\nimport android.app.PendingIntent\nimport android.content.Intent\nimport android.os.CancellationSignal\nimport android.service.autofill.*\nimport android.util.Log\nimport android.view.autofill.AutofillId\nimport android.view.autofill.AutofillValue\nimport android.view.inputmethod.InlineSuggestionsRequest\nimport android.widget.RemoteViews\nimport androidx.autofil",
+    "snippetStartLine": 1,
+    "snippetEndLine": 12,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.service\n\nimport android.app.PendingIntent\nimport android.content.Intent\nimport android.os.CancellationSignal\nimport android.service.autofill.*\nimport android.util.Log\nimport android.view.autofill.AutofillId\nimport android.view.autofill.AutofillValue\nimport android.view.inputmethod.InlineSuggestionsRequest\nimport android.widget.RemoteViews\nimport androidx.autofil",
+        "startLine": 1,
+        "endLine": 12
+      },
+      {
+        "text": ".view.inputmethod.InlineSuggestionsRequest\nimport android.widget.RemoteViews\nimport androidx.autofill.inline.v1.InlineSuggestionUi\nimport com.example.passwordmanager.R\nimport com.example.passwordmanager.data.CryptoManager\nimport com.example.passwordmanager.data.PasswordDao\nimport com.example.passwordmanager.data.PasswordEntry\nimport dagger.hilt.android.AndroidEntryPoint\nimport kotlinx.coroutines.C",
+        "startLine": 10,
+        "endLine": 18
+      },
+      {
+        "text": "dmanager.data.PasswordEntry\nimport dagger.hilt.android.AndroidEntryPoint\nimport kotlinx.coroutines.CoroutineScope\nimport kotlinx.coroutines.Dispatchers\nimport kotlinx.coroutines.launch\nimport kotlinx.coroutines.withContext\nimport java.lang.reflect.Method\nimport javax.inject.Inject\n\n@AndroidEntryPoint\nclass VaultAutofillService : AutofillService() {\n\n    @Inject\n    lateinit var passwordDao: Passwo",
+        "startLine": 16,
+        "endLine": 29
+      },
+      {
+        "text": "t\nclass VaultAutofillService : AutofillService() {\n\n    @Inject\n    lateinit var passwordDao: PasswordDao\n\n    @Inject\n    lateinit var cryptoManager: CryptoManager\n\n    private val serviceScope = CoroutineScope(Dispatchers.IO)\n\n    companion object {\n        private const val TAG = \"VaultAutofill\"\n    }\n\n    override fun onFillRequest(\n        request: FillRequest,\n        cancellationSignal: Can",
+        "startLine": 25,
+        "endLine": 42
+      },
+      {
+        "text": "}\n\n    override fun onFillRequest(\n        request: FillRequest,\n        cancellationSignal: CancellationSignal,\n        callback: FillCallback,\n    ) {\n        val contexts = request.fillContexts\n        if (contexts.isEmpty()) {\n            callback.onSuccess(null)\n            return\n        }\n\n        serviceScope.launch {\n            var bestResponse: FillResponse? = null\n\n            cont",
+        "startLine": 38,
+        "endLine": 54
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/AddPasswordScreen.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui\n\nimport androidx.compose.foundation.layout.*\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.automirrored.filled.ArrowBack\nimport androidx.compose.material3.*\nimport androidx.compose.runtime.*\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.unit.dp\nimport androidx.hilt.navigation.compose.hiltViewModel\nimport ",
+    "snippetStartLine": 1,
+    "snippetEndLine": 11,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui\n\nimport androidx.compose.foundation.layout.*\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.automirrored.filled.ArrowBack\nimport androidx.compose.material3.*\nimport androidx.compose.runtime.*\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.unit.dp\nimport androidx.hilt.navigation.compose.hiltViewModel\nimport",
+        "startLine": 1,
+        "endLine": 11
+      },
+      {
+        "text": "ier\nimport androidx.compose.ui.unit.dp\nimport androidx.hilt.navigation.compose.hiltViewModel\nimport java.security.SecureRandom\n\n@OptIn(ExperimentalMaterial3Api::class)\n@Composable\nfun AddPasswordScreen(\n    passwordId: Int? = null,\n    onNavigateBack: () -> Unit,\n    viewModel: VaultViewModel = hiltViewModel(),\n) {\n    var title by remember { mutableStateOf(\"\") }\n    var username by remember { mut",
+        "startLine": 8,
+        "endLine": 21
+      },
+      {
+        "text": "ViewModel(),\n) {\n    var title by remember { mutableStateOf(\"\") }\n    var username by remember { mutableStateOf(\"\") }\n    var password by remember { mutableStateOf(\"\") }\n\n    val secureRandom = remember { SecureRandom() }\n\n    LaunchedEffect(passwordId) {\n        passwordId?.let { id ->\n            val entry = viewModel.getPasswordById(id)\n            entry?.let {\n                title = it.title",
+        "startLine": 18,
+        "endLine": 31
+      },
+      {
+        "text": "val entry = viewModel.getPasswordById(id)\n            entry?.let {\n                title = it.title\n                username = it.username\n                password = viewModel.decryptPassword(it)\n            }\n        }\n    }\n\n    Scaffold(\n        topBar = {\n            TopAppBar(\n                title = { Text(if (passwordId == null) \"Add Password\" else \"Edit Password\") },\n                naviga",
+        "startLine": 28,
+        "endLine": 41
+      },
+      {
+        "text": "itle = { Text(if (passwordId == null) \"Add Password\" else \"Edit Password\") },\n                navigationIcon = {\n                    IconButton(onClick = onNavigateBack) {\n                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = \"Back\")\n                    }\n                },\n                colors = TopAppBarDefaults.topAppBarColors(\n                    containerCol",
+        "startLine": 40,
+        "endLine": 47
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/VaultScreen.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui\n\nimport android.content.ClipData\nimport androidx.compose.foundation.clickable\nimport androidx.compose.foundation.layout.*\nimport androidx.compose.foundation.lazy.LazyColumn\nimport androidx.compose.foundation.lazy.items\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.filled.Add\nimport androidx.compose.material.icons.filled.D",
+    "snippetStartLine": 1,
+    "snippetEndLine": 10,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui\n\nimport android.content.ClipData\nimport androidx.compose.foundation.clickable\nimport androidx.compose.foundation.layout.*\nimport androidx.compose.foundation.lazy.LazyColumn\nimport androidx.compose.foundation.lazy.items\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.filled.Add\nimport androidx.compose.material.icons.filled.D",
+        "startLine": 1,
+        "endLine": 10
+      },
+      {
+        "text": "ns\nimport androidx.compose.material.icons.filled.Add\nimport androidx.compose.material.icons.filled.Delete\nimport androidx.compose.material.icons.filled.Edit\nimport androidx.compose.material.icons.filled.Search\nimport androidx.compose.material3.*\nimport androidx.compose.runtime.*\nimport androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.platform.ClipEntry\ni",
+        "startLine": 8,
+        "endLine": 18
+      },
+      {
+        "text": "ose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.platform.ClipEntry\nimport androidx.compose.ui.platform.LocalClipboard\nimport androidx.compose.ui.text.AnnotatedString\nimport androidx.compose.ui.unit.dp\nimport androidx.hilt.navigation.compose.hiltViewModel\nimport com.example.passwordmanager.data.PasswordEntry\nimport kotlinx.coroutines.launch\n\n@OptIn(ExperimentalMateri",
+        "startLine": 15,
+        "endLine": 25
+      },
+      {
+        "text": "ample.passwordmanager.data.PasswordEntry\nimport kotlinx.coroutines.launch\n\n@OptIn(ExperimentalMaterial3Api::class)\n@Composable\nfun VaultScreen(\n    onNavigateToAdd: () -> Unit,\n    onNavigateToEdit: (Int) -> Unit,\n    viewModel: VaultViewModel = hiltViewModel(),\n) {\n    val passwords by viewModel.passwords.collectAsState()\n    val searchQuery by viewModel.searchQuery.collectAsState()\n\n    Scaffold",
+        "startLine": 22,
+        "endLine": 35
+      },
+      {
+        "text": "sswords.collectAsState()\n    val searchQuery by viewModel.searchQuery.collectAsState()\n\n    Scaffold(\n        topBar = {\n            Column {\n                TopAppBar(\n                    title = { Text(\"My Vault\") },\n                    colors = TopAppBarDefaults.topAppBarColors(\n                        containerColor = MaterialTheme.colorScheme.primaryContainer,\n                        titleCon",
+        "startLine": 32,
+        "endLine": 42
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/VaultViewModel.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui\n\nimport androidx.lifecycle.ViewModel\nimport androidx.lifecycle.viewModelScope\nimport com.example.passwordmanager.data.CryptoManager\nimport com.example.passwordmanager.data.PasswordDao\nimport com.example.passwordmanager.data.PasswordEntry\nimport dagger.hilt.android.lifecycle.HiltViewModel\nimport kotlinx.coroutines.flow.MutableStateFlow\nimport kotlinx.coroutine",
+    "snippetStartLine": 1,
+    "snippetEndLine": 10,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui\n\nimport androidx.lifecycle.ViewModel\nimport androidx.lifecycle.viewModelScope\nimport com.example.passwordmanager.data.CryptoManager\nimport com.example.passwordmanager.data.PasswordDao\nimport com.example.passwordmanager.data.PasswordEntry\nimport dagger.hilt.android.lifecycle.HiltViewModel\nimport kotlinx.coroutines.flow.MutableStateFlow\nimport kotlinx.coroutine",
+        "startLine": 1,
+        "endLine": 10
+      },
+      {
+        "text": "oid.lifecycle.HiltViewModel\nimport kotlinx.coroutines.flow.MutableStateFlow\nimport kotlinx.coroutines.flow.SharingStarted\nimport kotlinx.coroutines.flow.StateFlow\nimport kotlinx.coroutines.flow.asStateFlow\nimport kotlinx.coroutines.flow.combine\nimport kotlinx.coroutines.flow.stateIn\nimport kotlinx.coroutines.launch\nimport javax.inject.Inject\n\n@HiltViewModel\nclass VaultViewModel @Inject constructor",
+        "startLine": 8,
+        "endLine": 19
+      },
+      {
+        "text": "oroutines.launch\nimport javax.inject.Inject\n\n@HiltViewModel\nclass VaultViewModel @Inject constructor(\n    private val passwordDao: PasswordDao,\n    private val cryptoManager: CryptoManager,\n) : ViewModel() {\n\n    private val _searchQuery = MutableStateFlow(\"\")\n    val searchQuery = _searchQuery.asStateFlow()\n\n    // Expose the list of passwords as a Flow, filtered by search query\n    val passwords",
+        "startLine": 15,
+        "endLine": 28
+      },
+      {
+        "text": "ateFlow()\n\n    // Expose the list of passwords as a Flow, filtered by search query\n    val passwords: StateFlow<List<PasswordEntry>> = passwordDao.getAllPasswords()\n        .combine(_searchQuery) { list, query ->\n            if (query.isBlank()) {\n                list\n            } else {\n                list.filter {\n                    it.title.contains(query, ignoreCase = true) ||",
+        "startLine": 25,
+        "endLine": 35
+      },
+      {
+        "text": "list.filter {\n                    it.title.contains(query, ignoreCase = true) ||\n                        it.username.contains(query, ignoreCase = true)\n                }\n            }\n        }\n        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())\n\n    fun updateSearchQuery(query: String) {\n        _searchQuery.value = query\n    }\n\n    suspend fun getPasswordById(id: Int): Pas",
+        "startLine": 33,
+        "endLine": 45
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/theme/Color.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui.theme\n\nimport androidx.compose.ui.graphics.Color\n\nval Purple80 = Color(0xFFD0BCFF)\nval PurpleGrey80 = Color(0xFFCCC2DC)\nval Pink80 = Color(0xFFEFB8C8)\n\nval Purple40 = Color(0xFF6650a4)\nval PurpleGrey40 = Color(0xFF625b71)\nval Pink40 = Color(0xFF7D5260)",
+    "snippetStartLine": 1,
+    "snippetEndLine": 11,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui.theme\n\nimport androidx.compose.ui.graphics.Color\n\nval Purple80 = Color(0xFFD0BCFF)\nval PurpleGrey80 = Color(0xFFCCC2DC)\nval Pink80 = Color(0xFFEFB8C8)\n\nval Purple40 = Color(0xFF6650a4)\nval PurpleGrey40 = Color(0xFF625b71)\nval Pink40 = Color(0xFF7D5260)",
+        "startLine": 1,
+        "endLine": 11
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/theme/Theme.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui.theme\n\nimport android.os.Build\nimport androidx.compose.foundation.isSystemInDarkTheme\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.darkColorScheme\nimport androidx.compose.material3.dynamicDarkColorScheme\nimport androidx.compose.material3.dynamicLightColorScheme\nimport androidx.compose.material3.lightColorScheme\nimport andr",
+    "snippetStartLine": 1,
+    "snippetEndLine": 10,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui.theme\n\nimport android.os.Build\nimport androidx.compose.foundation.isSystemInDarkTheme\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.darkColorScheme\nimport androidx.compose.material3.dynamicDarkColorScheme\nimport androidx.compose.material3.dynamicLightColorScheme\nimport androidx.compose.material3.lightColorScheme\nimport andr",
+        "startLine": 1,
+        "endLine": 10
+      },
+      {
+        "text": "ose.material3.dynamicLightColorScheme\nimport androidx.compose.material3.lightColorScheme\nimport androidx.compose.runtime.Composable\nimport androidx.compose.ui.platform.LocalContext\n\nprivate val DarkColorScheme = darkColorScheme(\n    primary = Purple80,\n    secondary = PurpleGrey80,\n    tertiary = Pink80,\n)\n\nprivate val LightColorScheme = lightColorScheme(\n    primary = Purple40,\n    secondary = Pu",
+        "startLine": 8,
+        "endLine": 21
+      },
+      {
+        "text": "nk80,\n)\n\nprivate val LightColorScheme = lightColorScheme(\n    primary = Purple40,\n    secondary = PurpleGrey40,\n    tertiary = Pink40,\n\n    /* Other default colors to override\n    background = Color(0xFFFFFBFE),\n    surface = Color(0xFFFFFBFE),\n    onPrimary = Color.White,\n    onSecondary = Color.White,\n    onTertiary = Color.White,\n    onBackground = Color(0xFF1C1B1F),\n    onSurface = Color(0xFF1",
+        "startLine": 16,
+        "endLine": 31
+      },
+      {
+        "text": "ite,\n    onTertiary = Color.White,\n    onBackground = Color(0xFF1C1B1F),\n    onSurface = Color(0xFF1C1B1F),\n    */\n)\n\n@Composable\nfun PasswordManagerTheme(\n    darkTheme: Boolean = isSystemInDarkTheme(),\n    // Dynamic color is available on Android 12+\n    dynamicColor: Boolean = true,\n    content: @Composable () -> Unit\n) {\n    val colorScheme = when {\n        (dynamicColor && Build.VERSION.SDK_I",
+        "startLine": 28,
+        "endLine": 43
+      },
+      {
+        "text": "@Composable () -> Unit\n) {\n    val colorScheme = when {\n        (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) -> {\n            val context = LocalContext.current\n            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)\n        }\n\n        darkTheme -> DarkColorScheme\n        else -> LightColorScheme\n    }\n\n    MaterialTheme(\n        colorSc",
+        "startLine": 40,
+        "endLine": 53
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/theme/Type.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui.theme\n\nimport androidx.compose.material3.Typography\nimport androidx.compose.ui.text.TextStyle\nimport androidx.compose.ui.text.font.FontFamily\nimport androidx.compose.ui.text.font.FontWeight\nimport androidx.compose.ui.unit.sp\n\n// Set of Material typography styles to start with\nval Typography = Typography(\n    bodyLarge = TextStyle(\n        fontFamily = FontFam",
+    "snippetStartLine": 1,
+    "snippetEndLine": 12,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui.theme\n\nimport androidx.compose.material3.Typography\nimport androidx.compose.ui.text.TextStyle\nimport androidx.compose.ui.text.font.FontFamily\nimport androidx.compose.ui.text.font.FontWeight\nimport androidx.compose.ui.unit.sp\n\n// Set of Material typography styles to start with\nval Typography = Typography(\n    bodyLarge = TextStyle(\n        fontFamily = FontFam",
+        "startLine": 1,
+        "endLine": 12
+      },
+      {
+        "text": "s to start with\nval Typography = Typography(\n    bodyLarge = TextStyle(\n        fontFamily = FontFamily.Default,\n        fontWeight = FontWeight.Normal,\n        fontSize = 16.sp,\n        lineHeight = 24.sp,\n        letterSpacing = 0.5.sp,\n    )\n    /* Other default text styles to override\n    titleLarge = TextStyle(\n        fontFamily = FontFamily.Default,\n        fontWeight = FontWeight.Normal,",
+        "startLine": 9,
+        "endLine": 22
+      },
+      {
+        "text": "arge = TextStyle(\n        fontFamily = FontFamily.Default,\n        fontWeight = FontWeight.Normal,\n        fontSize = 22.sp,\n        lineHeight = 28.sp,\n        letterSpacing = 0.sp\n    ),\n    labelSmall = TextStyle(\n        fontFamily = FontFamily.Default,\n        fontWeight = FontWeight.Medium,\n        fontSize = 11.sp,\n        lineHeight = 16.sp,\n        letterSpacing = 0.5.sp,\n    )\n    */\n)",
+        "startLine": 19,
+        "endLine": 34
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/test/java/com/example/passwordmanager/ExampleUnitTest.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager\n\nimport org.junit.Test\n\nimport org.junit.Assert.*\n\n/**\n * Example local unit test, which will execute on the development machine (host).\n *\n * See [testing documentation](http://d.android.com/tools/testing).\n */\nclass ExampleUnitTest {\n    @Test\n    fun addition_isCorrect() {\n        assertEquals(4, 2 + 2)\n    }\n}",
+    "snippetStartLine": 1,
+    "snippetEndLine": 17,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager\n\nimport org.junit.Test\n\nimport org.junit.Assert.*\n\n/**\n * Example local unit test, which will execute on the development machine (host).\n *\n * See [testing documentation](http://d.android.com/tools/testing).\n */\nclass ExampleUnitTest {\n    @Test\n    fun addition_isCorrect() {\n        assertEquals(4, 2 + 2)\n    }\n}",
+        "startLine": 1,
+        "endLine": 17
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/README.md",
+    "symbols": [],
+    "snippet": "# Password Manager\n\nA native Android password manager built with Kotlin and Jetpack Compose. Passwords are encrypted at rest using the Android Keystore (AES-256-GCM) — the encryption key never leaves the device's secure hardware. Includes a system-level autofill service that surfaces credentials directly in other apps' login fields.\n\nThis is a vibe-coded project developed iteratively using Android Studio and AI-assisted tools.\n\n## Features\n\n- **Vault screen** — scrollable list of all saved passwords\n- **Add password screen** — title/website, username, and password fields\n- **Password generator** — one-tap 16-character strong password generation\n- **Tap to reveal** — passwords shown as `••••••••` until tapped\n- **Copy to clipboard** — copy decrypted password with one button when revealed\n- ",
+    "snippetStartLine": 1,
+    "snippetEndLine": 14,
+    "chunks": [
+      {
+        "text": "# Password Manager\n\nA native Android password manager built with Kotlin and Jetpack Compose. Passwords are encrypted at rest using the Android Keystore (AES-256-GCM) — the encryption key never leaves the device's secure hardware. Includes a system-level autofill service that surfaces credentials directly in other apps' login fields.\n\nThis is a vibe-coded project developed iteratively using Android Studio and AI-assisted tools.\n\n## Features\n\n- **Vault screen** — scrollable list of all saved passwords\n- **Add password screen** — title/website, username, and password fields\n- **Password generator",
+        "startLine": 1,
+        "endLine": 11
+      },
+      {
+        "text": "ords\n- **Add password screen** — title/website, username, and password fields\n- **Password generator** — one-tap 16-character strong password generation\n- **Tap to reveal** — passwords shown as `••••••••` until tapped\n- **Copy to clipboard** — copy decrypted password with one button when revealed\n- **Delete** — single-tap delete per entry\n- **AES-256-GCM encryption** — passwords encrypted via Android Keystore before being stored in the local Room database\n- **Autofill service** — detects username/password fields in any app or browser, matches saved entries by domain/package name, and fills cre",
+        "startLine": 9,
+        "endLine": 16
+      },
+      {
+        "text": "e/password fields in any app or browser, matches saved entries by domain/package name, and fills credentials without leaving the current app. Also prompts to save new credentials when a login form is submitted.\n\n## Architecture\n\n```\ncom.example.passwordmanager/\n├── VaultApplication.kt              # @HiltAndroidApp entry point\n├── MainActivity.kt                  # NavHost (vault → add routes)\n├── data/\n│   ├── PasswordEntry.kt             # Room entity: id, title, username, encryptedPassword\n│   ├── PasswordDao.kt               # getAllPasswords() Flow, getAllPasswordsSync(), insert, delete\n│",
+        "startLine": 16,
+        "endLine": 27
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/androidTest/java/com/example/passwordmanager/ExampleInstrumentedTest.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager\n\nimport androidx.test.platform.app.InstrumentationRegistry\nimport androidx.test.ext.junit.runners.AndroidJUnit4\n\nimport org.junit.Test\nimport org.junit.runner.RunWith\n\nimport org.junit.Assert.*\n\n/**\n * Instrumented test, which will execute on an Android device.\n *\n * See [testing documentation](http://d.android.com/tools/testing).\n */\n@RunWith(AndroidJUnit4::cla",
+    "snippetStartLine": 1,
+    "snippetEndLine": 16,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager\n\nimport androidx.test.platform.app.InstrumentationRegistry\nimport androidx.test.ext.junit.runners.AndroidJUnit4\n\nimport org.junit.Test\nimport org.junit.runner.RunWith\n\nimport org.junit.Assert.*\n\n/**\n * Instrumented test, which will execute on an Android device.\n *\n * See [testing documentation](http://d.android.com/tools/testing).\n */\n@RunWith(AndroidJUnit4::cla",
+        "startLine": 1,
+        "endLine": 16
+      },
+      {
+        "text": "* See [testing documentation](http://d.android.com/tools/testing).\n */\n@RunWith(AndroidJUnit4::class)\nclass ExampleInstrumentedTest {\n    @Test\n    fun useAppContext() {\n        // Context of the app under test.\n        val appContext = InstrumentationRegistry.getInstrumentation().targetContext\n        assertEquals(\"com.example.passwordmanager\", appContext.packageName)\n    }\n}",
+        "startLine": 13,
+        "endLine": 24
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/MainActivity.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager\n\nimport android.os.Bundle\nimport android.view.WindowManager\nimport androidx.activity.ComponentActivity\nimport androidx.activity.compose.setContent\nimport androidx.activity.enableEdgeToEdge\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Surface\nimport androidx.compose.ui.Modi",
+    "snippetStartLine": 1,
+    "snippetEndLine": 11,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager\n\nimport android.os.Bundle\nimport android.view.WindowManager\nimport androidx.activity.ComponentActivity\nimport androidx.activity.compose.setContent\nimport androidx.activity.enableEdgeToEdge\nimport androidx.compose.foundation.layout.fillMaxSize\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.Surface\nimport androidx.compose.ui.Modi",
+        "startLine": 1,
+        "endLine": 11
+      },
+      {
+        "text": "se.material3.MaterialTheme\nimport androidx.compose.material3.Surface\nimport androidx.compose.ui.Modifier\nimport androidx.navigation.NavType\nimport androidx.navigation.compose.NavHost\nimport androidx.navigation.compose.composable\nimport androidx.navigation.compose.rememberNavController\nimport androidx.navigation.navArgument\nimport com.example.passwordmanager.ui.AddPasswordScreen\nimport com.example.",
+        "startLine": 9,
+        "endLine": 18
+      },
+      {
+        "text": "x.navigation.navArgument\nimport com.example.passwordmanager.ui.AddPasswordScreen\nimport com.example.passwordmanager.ui.VaultScreen\nimport com.example.passwordmanager.ui.theme.PasswordManagerTheme\nimport dagger.hilt.android.AndroidEntryPoint\n\n@AndroidEntryPoint\nclass MainActivity : ComponentActivity() {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceSta",
+        "startLine": 16,
+        "endLine": 25
+      },
+      {
+        "text": ") {\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState)\n        // Prevent screenshots and screen recording for security\n        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)\n        \n        enableEdgeToEdge()\n        setContent {\n            PasswordManagerTheme {\n                Surface(\n                    modifier = Modifier.fillMaxSiz",
+        "startLine": 23,
+        "endLine": 33
+      },
+      {
+        "text": "PasswordManagerTheme {\n                Surface(\n                    modifier = Modifier.fillMaxSize(),\n                    color = MaterialTheme.colorScheme.background\n                ) {\n                    val navController = rememberNavController()\n                    NavHost(navController = navController, startDestination = \"vault\") {\n                        composable(\"vault\") {",
+        "startLine": 31,
+        "endLine": 39
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/VaultApplication.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager\n\nimport android.app.Application\nimport dagger.hilt.android.HiltAndroidApp\n\n@HiltAndroidApp\nclass VaultApplication : Application()",
+    "snippetStartLine": 1,
+    "snippetEndLine": 8,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager\n\nimport android.app.Application\nimport dagger.hilt.android.HiltAndroidApp\n\n@HiltAndroidApp\nclass VaultApplication : Application()",
+        "startLine": 1,
+        "endLine": 8
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/data/AppDatabase.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.data\n\nimport androidx.room.Database\nimport androidx.room.RoomDatabase\n\n@Database(entities = [PasswordEntry::class], version = 1, exportSchema = false)\nabstract class AppDatabase : RoomDatabase() {\n    abstract fun passwordDao(): PasswordDao\n}",
+    "snippetStartLine": 1,
+    "snippetEndLine": 10,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.data\n\nimport androidx.room.Database\nimport androidx.room.RoomDatabase\n\n@Database(entities = [PasswordEntry::class], version = 1, exportSchema = false)\nabstract class AppDatabase : RoomDatabase() {\n    abstract fun passwordDao(): PasswordDao\n}",
+        "startLine": 1,
+        "endLine": 10
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/data/CryptoManager.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.data\n\nimport android.security.keystore.KeyGenParameterSpec\nimport android.security.keystore.KeyProperties\nimport java.security.KeyStore\nimport javax.crypto.Cipher\nimport javax.crypto.KeyGenerator\nimport javax.crypto.SecretKey\nimport javax.crypto.spec.GCMParameterSpec\n\nclass CryptoManager {\n\n    private val keyStore = KeyStore.getInstance(\"AndroidKeyStore\").apply",
+    "snippetStartLine": 1,
+    "snippetEndLine": 13,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.data\n\nimport android.security.keystore.KeyGenParameterSpec\nimport android.security.keystore.KeyProperties\nimport java.security.KeyStore\nimport javax.crypto.Cipher\nimport javax.crypto.KeyGenerator\nimport javax.crypto.SecretKey\nimport javax.crypto.spec.GCMParameterSpec\n\nclass CryptoManager {\n\n    private val keyStore = KeyStore.getInstance(\"AndroidKeyStore\").apply",
+        "startLine": 1,
+        "endLine": 13
+      },
+      {
+        "text": "pec\n\nclass CryptoManager {\n\n    private val keyStore = KeyStore.getInstance(\"AndroidKeyStore\").apply {\n        load(null)\n    }\n\n    private val encryptCipher get() = Cipher.getInstance(TRANSFORMATION).apply {\n        init(Cipher.ENCRYPT_MODE, getKey())\n    }\n\n    private fun getDecryptCipherForIv(iv: ByteArray): Cipher {\n        return Cipher.getInstance(TRANSFORMATION).apply {\n            init(C",
+        "startLine": 9,
+        "endLine": 23
+      },
+      {
+        "text": "v: ByteArray): Cipher {\n        return Cipher.getInstance(TRANSFORMATION).apply {\n            init(Cipher.DECRYPT_MODE, getKey(), GCMParameterSpec(128, iv))\n        }\n    }\n\n    private fun getKey(): SecretKey {\n        val existingKey = keyStore.getEntry(\"vault_key\", null) as? KeyStore.SecretKeyEntry\n        return existingKey?.secretKey ?: createKey()\n    }\n\n    private fun createKey(): SecretKe",
+        "startLine": 21,
+        "endLine": 32
+      },
+      {
+        "text": "ry\n        return existingKey?.secretKey ?: createKey()\n    }\n\n    private fun createKey(): SecretKey {\n        return KeyGenerator.getInstance(ALGORITHM).apply {\n            init(\n                KeyGenParameterSpec.Builder(\n                    \"vault_key\",\n                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,\n                )\n                    .setBlockModes(BLOC",
+        "startLine": 28,
+        "endLine": 39
+      },
+      {
+        "text": "_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,\n                )\n                    .setBlockModes(BLOCK_MODE)\n                    .setEncryptionPaddings(PADDING)\n                    .setUserAuthenticationRequired(false)\n                    .setRandomizedEncryptionRequired(true)\n                    .build(),\n            )\n        }.generateKey()\n    }\n\n    fun encrypt(bytes: ByteArray): ByteArray {",
+        "startLine": 37,
+        "endLine": 49
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/data/PasswordDao.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.data\n\nimport androidx.room.Dao\nimport androidx.room.Delete\nimport androidx.room.Insert\nimport androidx.room.OnConflictStrategy\nimport androidx.room.Query\nimport kotlinx.coroutines.flow.Flow\n\n@Dao\ninterface PasswordDao {\n    @Query(\"SELECT * FROM passwords\")\n    fun getAllPasswords(): Flow<List<PasswordEntry>>\n\n    @Query(\"SELECT * FROM passwords\")\n    suspend fu",
+    "snippetStartLine": 1,
+    "snippetEndLine": 16,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.data\n\nimport androidx.room.Dao\nimport androidx.room.Delete\nimport androidx.room.Insert\nimport androidx.room.OnConflictStrategy\nimport androidx.room.Query\nimport kotlinx.coroutines.flow.Flow\n\n@Dao\ninterface PasswordDao {\n    @Query(\"SELECT * FROM passwords\")\n    fun getAllPasswords(): Flow<List<PasswordEntry>>\n\n    @Query(\"SELECT * FROM passwords\")\n    suspend fu",
+        "startLine": 1,
+        "endLine": 16
+      },
+      {
+        "text": "n getAllPasswords(): Flow<List<PasswordEntry>>\n\n    @Query(\"SELECT * FROM passwords\")\n    suspend fun getAllPasswordsSync(): List<PasswordEntry>\n\n    @Insert(onConflict = OnConflictStrategy.REPLACE)\n    suspend fun insertPassword(entry: PasswordEntry)\n\n    @Delete\n    suspend fun deletePassword(entry: PasswordEntry)\n}",
+        "startLine": 13,
+        "endLine": 24
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/data/PasswordEntry.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.data\n\nimport androidx.room.Entity\nimport androidx.room.PrimaryKey\n\n@Entity(tableName = \"passwords\")\ndata class PasswordEntry(\n    @PrimaryKey(autoGenerate = true)\n    val id: Int = 0,\n    val title: String,\n    val username: String,\n    val encryptedPassword: ByteArray\n) {\n    override fun equals(other: Any?): Boolean {\n        if (this === other) return true\n  ",
+    "snippetStartLine": 1,
+    "snippetEndLine": 16,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.data\n\nimport androidx.room.Entity\nimport androidx.room.PrimaryKey\n\n@Entity(tableName = \"passwords\")\ndata class PasswordEntry(\n    @PrimaryKey(autoGenerate = true)\n    val id: Int = 0,\n    val title: String,\n    val username: String,\n    val encryptedPassword: ByteArray\n) {\n    override fun equals(other: Any?): Boolean {\n        if (this === other) return true",
+        "startLine": 1,
+        "endLine": 16
+      },
+      {
+        "text": "Array\n) {\n    override fun equals(other: Any?): Boolean {\n        if (this === other) return true\n        if (javaClass != other?.javaClass) return false\n\n        other as PasswordEntry\n\n        if (id != other.id) return false\n        if (title != other.title) return false\n        if (username != other.username) return false\n        if (!encryptedPassword.contentEquals(other.encryptedPassword)) r",
+        "startLine": 12,
+        "endLine": 23
+      },
+      {
+        "text": "ther.username) return false\n        if (!encryptedPassword.contentEquals(other.encryptedPassword)) return false\n\n        return true\n    }\n\n    override fun hashCode(): Int {\n        var result = id\n        result = 31 * result + title.hashCode()\n        result = 31 * result + username.hashCode()\n        result = 31 * result + encryptedPassword.contentHashCode()\n        return result\n    }\n}",
+        "startLine": 22,
+        "endLine": 36
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/di/DataModule.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.di\n\nimport android.content.Context\nimport androidx.room.Room\nimport com.example.passwordmanager.data.AppDatabase\nimport com.example.passwordmanager.data.CryptoManager\nimport com.example.passwordmanager.data.PasswordDao\nimport dagger.Module\nimport dagger.Provides\nimport dagger.hilt.InstallIn\nimport dagger.hilt.android.qualifiers.ApplicationContext\nimport dagger.h",
+    "snippetStartLine": 1,
+    "snippetEndLine": 12,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.di\n\nimport android.content.Context\nimport androidx.room.Room\nimport com.example.passwordmanager.data.AppDatabase\nimport com.example.passwordmanager.data.CryptoManager\nimport com.example.passwordmanager.data.PasswordDao\nimport dagger.Module\nimport dagger.Provides\nimport dagger.hilt.InstallIn\nimport dagger.hilt.android.qualifiers.ApplicationContext\nimport dagger.h",
+        "startLine": 1,
+        "endLine": 12
+      },
+      {
+        "text": "mport dagger.hilt.InstallIn\nimport dagger.hilt.android.qualifiers.ApplicationContext\nimport dagger.hilt.components.SingletonComponent\nimport javax.inject.Singleton\n\n@Module\n@InstallIn(SingletonComponent::class)\nobject DataModule {\n\n    @Provides\n    @Singleton\n    fun provideCryptoManager(): CryptoManager {\n        return CryptoManager()\n    }\n\n    @Provides\n    @Singleton\n    fun provideAppDataba",
+        "startLine": 10,
+        "endLine": 27
+      },
+      {
+        "text": "anager {\n        return CryptoManager()\n    }\n\n    @Provides\n    @Singleton\n    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {\n        return Room.databaseBuilder(\n            context,\n            AppDatabase::class.java,\n            \"vault_db\"\n        ).build()\n    }\n\n    @Provides\n    fun providePasswordDao(database: AppDatabase): PasswordDao {\n        return databas",
+        "startLine": 21,
+        "endLine": 37
+      },
+      {
+        "text": "@Provides\n    fun providePasswordDao(database: AppDatabase): PasswordDao {\n        return database.passwordDao()\n    }\n}",
+        "startLine": 35,
+        "endLine": 40
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/service/AssistStructureParser.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.service\n\nimport android.app.assist.AssistStructure\nimport android.util.Log\nimport android.view.View\n\nclass AssistStructureParser {\n    var webDomain: String? = null\n    var usernameNodes = mutableListOf<AssistStructure.ViewNode>()\n    var passwordNodes = mutableListOf<AssistStructure.ViewNode>()\n\n    // Evidence gathering metadata\n    var htmlInfoCount = 0\n    v",
+    "snippetStartLine": 1,
+    "snippetEndLine": 14,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.service\n\nimport android.app.assist.AssistStructure\nimport android.util.Log\nimport android.view.View\n\nclass AssistStructureParser {\n    var webDomain: String? = null\n    var usernameNodes = mutableListOf<AssistStructure.ViewNode>()\n    var passwordNodes = mutableListOf<AssistStructure.ViewNode>()\n\n    // Evidence gathering metadata\n    var htmlInfoCount = 0\n    v",
+        "startLine": 1,
+        "endLine": 14
+      },
+      {
+        "text": "stOf<AssistStructure.ViewNode>()\n\n    // Evidence gathering metadata\n    var htmlInfoCount = 0\n    var inputTypeMap = mutableMapOf<Int, Int>()\n\n    companion object {\n        private const val TAG = \"AssistParser\"\n\n        private val BROWSER_PACKAGES = setOf(\n            \"com.android.chrome\",\n            \"com.chrome.beta\",\n            \"com.chrome.dev\",\n            \"com.chrome.canary\",",
+        "startLine": 10,
+        "endLine": 24
+      },
+      {
+        "text": "\"com.chrome.beta\",\n            \"com.chrome.dev\",\n            \"com.chrome.canary\",\n            \"org.mozilla.firefox\",\n            \"org.mozilla.focus\",\n            \"com.sec.android.app.sbrowser\",\n            \"com.microsoft.emmx\",\n            \"com.opera.browser\",\n            \"com.brave.browser\"\n        )\n\n        private val URL_BAR_IDS = listOf(\n            \"url_bar\",\n            \"omnibox\",",
+        "startLine": 21,
+        "endLine": 35
+      },
+      {
+        "text": ")\n\n        private val URL_BAR_IDS = listOf(\n            \"url_bar\",\n            \"omnibox\",\n            \"location_bar\",\n            \"search_box\",\n            \"address_bar\"\n        )\n\n        // Denylist for Chrome/browser shell IDs that must never be treated as username/password fields.\n        private val CHROME_SHELL_ID_DENYLIST = setOf(\n            \"custom_tabs_handle_view_stub\",",
+        "startLine": 30,
+        "endLine": 43
+      },
+      {
+        "text": "private val CHROME_SHELL_ID_DENYLIST = setOf(\n            \"custom_tabs_handle_view_stub\",\n            \"url_bar\",\n            \"toolbar\",\n            \"toolbar_container\",\n            \"location_bar_frame_layout\",\n            \"title_url_container\",\n            \"message_container\",\n            \"tab_switcher_view_holder_stub\",\n            \"tab_hover_card_holder_stub\",\n            \"compositor_view_hol",
+        "startLine": 41,
+        "endLine": 51
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/service/SmartMatcher.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.service\n\nimport android.util.Log\nimport com.example.passwordmanager.data.PasswordEntry\nimport java.util.Locale\n\nobject SmartMatcher {\n\n    private const val TAG = \"SmartMatcher\"\n\n    private val NOISE_SEGMENTS = setOf(\n        \"com\", \"org\", \"net\", \"io\", \"app\", \"dev\",\n        \"android\", \"google\", \"apps\", \"mobile\",\n        \"www\", \"m\", \"login\", \"signin\", \"auth\"\n   ",
+    "snippetStartLine": 1,
+    "snippetEndLine": 15,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.service\n\nimport android.util.Log\nimport com.example.passwordmanager.data.PasswordEntry\nimport java.util.Locale\n\nobject SmartMatcher {\n\n    private const val TAG = \"SmartMatcher\"\n\n    private val NOISE_SEGMENTS = setOf(\n        \"com\", \"org\", \"net\", \"io\", \"app\", \"dev\",\n        \"android\", \"google\", \"apps\", \"mobile\",\n        \"www\", \"m\", \"login\", \"signin\", \"auth\"",
+        "startLine": 1,
+        "endLine": 15
+      },
+      {
+        "text": "v\",\n        \"android\", \"google\", \"apps\", \"mobile\",\n        \"www\", \"m\", \"login\", \"signin\", \"auth\"\n    )\n\n    data class MatchResult(\n        val entry: PasswordEntry,\n        val score: Int,\n        val reason: String,\n    )\n\n    fun isMatch(vaultTitle: String, webDomain: String?, appPackage: String): Boolean {\n        return scoreMatch(vaultTitle, webDomain, appPackage) > 0\n    }\n\n    fun rankMatc",
+        "startLine": 12,
+        "endLine": 27
+      },
+      {
+        "text": ": Boolean {\n        return scoreMatch(vaultTitle, webDomain, appPackage) > 0\n    }\n\n    fun rankMatches(entries: List<PasswordEntry>, webDomain: String?, appPackage: String): List<MatchResult> {\n        val results = entries.map { entry ->\n            val score = scoreMatch(entry.title, webDomain, appPackage)\n            val reason = explainMatch(entry.title, webDomain, appPackage)\n            Mat",
+        "startLine": 23,
+        "endLine": 31
+      },
+      {
+        "text": "ppPackage)\n            val reason = explainMatch(entry.title, webDomain, appPackage)\n            MatchResult(entry = entry, score = score, reason = reason)\n        }.filter { it.score > 0 }\n            .sortedByDescending { it.score }\n\n        Log.d(TAG, \"rankMatches: domain=$webDomain pkg=$appPackage total=${entries.size} matched=${results.size}\")\n\n        // Extra diagnostics: log first N reject",
+        "startLine": 29,
+        "endLine": 37
+      },
+      {
+        "text": "ge total=${entries.size} matched=${results.size}\")\n\n        // Extra diagnostics: log first N rejections with reason so we know why nothing matches.\n        entries.take(10).forEach { entry ->\n            val score = scoreMatch(entry.title, webDomain, appPackage)\n            if (score <= 0) {\n                Log.d(TAG, \"reject: title=${entry.title} score=$score reason=${explainMatch(entry.title, w",
+        "startLine": 35,
+        "endLine": 41
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/service/VaultAutofillService.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.service\n\nimport android.app.PendingIntent\nimport android.content.Intent\nimport android.os.CancellationSignal\nimport android.service.autofill.*\nimport android.util.Log\nimport android.view.autofill.AutofillId\nimport android.view.autofill.AutofillValue\nimport android.view.inputmethod.InlineSuggestionsRequest\nimport android.widget.RemoteViews\nimport androidx.autofil",
+    "snippetStartLine": 1,
+    "snippetEndLine": 12,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.service\n\nimport android.app.PendingIntent\nimport android.content.Intent\nimport android.os.CancellationSignal\nimport android.service.autofill.*\nimport android.util.Log\nimport android.view.autofill.AutofillId\nimport android.view.autofill.AutofillValue\nimport android.view.inputmethod.InlineSuggestionsRequest\nimport android.widget.RemoteViews\nimport androidx.autofil",
+        "startLine": 1,
+        "endLine": 12
+      },
+      {
+        "text": ".view.inputmethod.InlineSuggestionsRequest\nimport android.widget.RemoteViews\nimport androidx.autofill.inline.v1.InlineSuggestionUi\nimport com.example.passwordmanager.R\nimport com.example.passwordmanager.data.CryptoManager\nimport com.example.passwordmanager.data.PasswordDao\nimport com.example.passwordmanager.data.PasswordEntry\nimport dagger.hilt.android.AndroidEntryPoint\nimport kotlinx.coroutines.C",
+        "startLine": 10,
+        "endLine": 18
+      },
+      {
+        "text": "dmanager.data.PasswordEntry\nimport dagger.hilt.android.AndroidEntryPoint\nimport kotlinx.coroutines.CoroutineScope\nimport kotlinx.coroutines.Dispatchers\nimport kotlinx.coroutines.launch\nimport kotlinx.coroutines.withContext\nimport java.lang.reflect.Method\nimport javax.inject.Inject\n\n@AndroidEntryPoint\nclass VaultAutofillService : AutofillService() {\n\n    @Inject\n    lateinit var passwordDao: Passwo",
+        "startLine": 16,
+        "endLine": 29
+      },
+      {
+        "text": "t\nclass VaultAutofillService : AutofillService() {\n\n    @Inject\n    lateinit var passwordDao: PasswordDao\n\n    @Inject\n    lateinit var cryptoManager: CryptoManager\n\n    private val serviceScope = CoroutineScope(Dispatchers.IO)\n\n    companion object {\n        private const val TAG = \"VaultAutofill\"\n    }\n\n    override fun onFillRequest(\n        request: FillRequest,\n        cancellationSignal: Can",
+        "startLine": 25,
+        "endLine": 42
+      },
+      {
+        "text": "}\n\n    override fun onFillRequest(\n        request: FillRequest,\n        cancellationSignal: CancellationSignal,\n        callback: FillCallback,\n    ) {\n        val contexts = request.fillContexts\n        if (contexts.isEmpty()) {\n            callback.onSuccess(null)\n            return\n        }\n\n        serviceScope.launch {\n            var bestResponse: FillResponse? = null\n\n            cont",
+        "startLine": 38,
+        "endLine": 54
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/AddPasswordScreen.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui\n\nimport androidx.compose.foundation.layout.*\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.automirrored.filled.ArrowBack\nimport androidx.compose.material3.*\nimport androidx.compose.runtime.*\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.unit.dp\nimport androidx.hilt.navigation.compose.hiltViewModel\nimport ",
+    "snippetStartLine": 1,
+    "snippetEndLine": 11,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui\n\nimport androidx.compose.foundation.layout.*\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.automirrored.filled.ArrowBack\nimport androidx.compose.material3.*\nimport androidx.compose.runtime.*\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.unit.dp\nimport androidx.hilt.navigation.compose.hiltViewModel\nimport",
+        "startLine": 1,
+        "endLine": 11
+      },
+      {
+        "text": "ier\nimport androidx.compose.ui.unit.dp\nimport androidx.hilt.navigation.compose.hiltViewModel\nimport java.security.SecureRandom\n\n@OptIn(ExperimentalMaterial3Api::class)\n@Composable\nfun AddPasswordScreen(\n    passwordId: Int? = null,\n    onNavigateBack: () -> Unit,\n    viewModel: VaultViewModel = hiltViewModel(),\n) {\n    var title by remember { mutableStateOf(\"\") }\n    var username by remember { mut",
+        "startLine": 8,
+        "endLine": 21
+      },
+      {
+        "text": "ViewModel(),\n) {\n    var title by remember { mutableStateOf(\"\") }\n    var username by remember { mutableStateOf(\"\") }\n    var password by remember { mutableStateOf(\"\") }\n\n    val secureRandom = remember { SecureRandom() }\n\n    LaunchedEffect(passwordId) {\n        passwordId?.let { id ->\n            val entry = viewModel.getPasswordById(id)\n            entry?.let {\n                title = it.title",
+        "startLine": 18,
+        "endLine": 31
+      },
+      {
+        "text": "val entry = viewModel.getPasswordById(id)\n            entry?.let {\n                title = it.title\n                username = it.username\n                password = viewModel.decryptPassword(it)\n            }\n        }\n    }\n\n    Scaffold(\n        topBar = {\n            TopAppBar(\n                title = { Text(if (passwordId == null) \"Add Password\" else \"Edit Password\") },\n                naviga",
+        "startLine": 28,
+        "endLine": 41
+      },
+      {
+        "text": "itle = { Text(if (passwordId == null) \"Add Password\" else \"Edit Password\") },\n                navigationIcon = {\n                    IconButton(onClick = onNavigateBack) {\n                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = \"Back\")\n                    }\n                },\n                colors = TopAppBarDefaults.topAppBarColors(\n                    containerCol",
+        "startLine": 40,
+        "endLine": 47
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/VaultScreen.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui\n\nimport android.content.ClipData\nimport androidx.compose.foundation.clickable\nimport androidx.compose.foundation.layout.*\nimport androidx.compose.foundation.lazy.LazyColumn\nimport androidx.compose.foundation.lazy.items\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.filled.Add\nimport androidx.compose.material.icons.filled.D",
+    "snippetStartLine": 1,
+    "snippetEndLine": 10,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui\n\nimport android.content.ClipData\nimport androidx.compose.foundation.clickable\nimport androidx.compose.foundation.layout.*\nimport androidx.compose.foundation.lazy.LazyColumn\nimport androidx.compose.foundation.lazy.items\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.filled.Add\nimport androidx.compose.material.icons.filled.D",
+        "startLine": 1,
+        "endLine": 10
+      },
+      {
+        "text": "ns\nimport androidx.compose.material.icons.filled.Add\nimport androidx.compose.material.icons.filled.Delete\nimport androidx.compose.material.icons.filled.Edit\nimport androidx.compose.material.icons.filled.Search\nimport androidx.compose.material3.*\nimport androidx.compose.runtime.*\nimport androidx.compose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.platform.ClipEntry\ni",
+        "startLine": 8,
+        "endLine": 18
+      },
+      {
+        "text": "ose.ui.Alignment\nimport androidx.compose.ui.Modifier\nimport androidx.compose.ui.platform.ClipEntry\nimport androidx.compose.ui.platform.LocalClipboard\nimport androidx.compose.ui.text.AnnotatedString\nimport androidx.compose.ui.unit.dp\nimport androidx.hilt.navigation.compose.hiltViewModel\nimport com.example.passwordmanager.data.PasswordEntry\nimport kotlinx.coroutines.launch\n\n@OptIn(ExperimentalMateri",
+        "startLine": 15,
+        "endLine": 25
+      },
+      {
+        "text": "ample.passwordmanager.data.PasswordEntry\nimport kotlinx.coroutines.launch\n\n@OptIn(ExperimentalMaterial3Api::class)\n@Composable\nfun VaultScreen(\n    onNavigateToAdd: () -> Unit,\n    onNavigateToEdit: (Int) -> Unit,\n    viewModel: VaultViewModel = hiltViewModel(),\n) {\n    val passwords by viewModel.passwords.collectAsState()\n    val searchQuery by viewModel.searchQuery.collectAsState()\n\n    Scaffold",
+        "startLine": 22,
+        "endLine": 35
+      },
+      {
+        "text": "sswords.collectAsState()\n    val searchQuery by viewModel.searchQuery.collectAsState()\n\n    Scaffold(\n        topBar = {\n            Column {\n                TopAppBar(\n                    title = { Text(\"My Vault\") },\n                    colors = TopAppBarDefaults.topAppBarColors(\n                        containerColor = MaterialTheme.colorScheme.primaryContainer,\n                        titleCon",
+        "startLine": 32,
+        "endLine": 42
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/VaultViewModel.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui\n\nimport androidx.lifecycle.ViewModel\nimport androidx.lifecycle.viewModelScope\nimport com.example.passwordmanager.data.CryptoManager\nimport com.example.passwordmanager.data.PasswordDao\nimport com.example.passwordmanager.data.PasswordEntry\nimport dagger.hilt.android.lifecycle.HiltViewModel\nimport kotlinx.coroutines.flow.MutableStateFlow\nimport kotlinx.coroutine",
+    "snippetStartLine": 1,
+    "snippetEndLine": 10,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui\n\nimport androidx.lifecycle.ViewModel\nimport androidx.lifecycle.viewModelScope\nimport com.example.passwordmanager.data.CryptoManager\nimport com.example.passwordmanager.data.PasswordDao\nimport com.example.passwordmanager.data.PasswordEntry\nimport dagger.hilt.android.lifecycle.HiltViewModel\nimport kotlinx.coroutines.flow.MutableStateFlow\nimport kotlinx.coroutine",
+        "startLine": 1,
+        "endLine": 10
+      },
+      {
+        "text": "oid.lifecycle.HiltViewModel\nimport kotlinx.coroutines.flow.MutableStateFlow\nimport kotlinx.coroutines.flow.SharingStarted\nimport kotlinx.coroutines.flow.StateFlow\nimport kotlinx.coroutines.flow.asStateFlow\nimport kotlinx.coroutines.flow.combine\nimport kotlinx.coroutines.flow.stateIn\nimport kotlinx.coroutines.launch\nimport javax.inject.Inject\n\n@HiltViewModel\nclass VaultViewModel @Inject constructor",
+        "startLine": 8,
+        "endLine": 19
+      },
+      {
+        "text": "oroutines.launch\nimport javax.inject.Inject\n\n@HiltViewModel\nclass VaultViewModel @Inject constructor(\n    private val passwordDao: PasswordDao,\n    private val cryptoManager: CryptoManager,\n) : ViewModel() {\n\n    private val _searchQuery = MutableStateFlow(\"\")\n    val searchQuery = _searchQuery.asStateFlow()\n\n    // Expose the list of passwords as a Flow, filtered by search query\n    val passwords",
+        "startLine": 15,
+        "endLine": 28
+      },
+      {
+        "text": "ateFlow()\n\n    // Expose the list of passwords as a Flow, filtered by search query\n    val passwords: StateFlow<List<PasswordEntry>> = passwordDao.getAllPasswords()\n        .combine(_searchQuery) { list, query ->\n            if (query.isBlank()) {\n                list\n            } else {\n                list.filter {\n                    it.title.contains(query, ignoreCase = true) ||",
+        "startLine": 25,
+        "endLine": 35
+      },
+      {
+        "text": "list.filter {\n                    it.title.contains(query, ignoreCase = true) ||\n                        it.username.contains(query, ignoreCase = true)\n                }\n            }\n        }\n        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())\n\n    fun updateSearchQuery(query: String) {\n        _searchQuery.value = query\n    }\n\n    suspend fun getPasswordById(id: Int): Pas",
+        "startLine": 33,
+        "endLine": 45
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/theme/Color.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui.theme\n\nimport androidx.compose.ui.graphics.Color\n\nval Purple80 = Color(0xFFD0BCFF)\nval PurpleGrey80 = Color(0xFFCCC2DC)\nval Pink80 = Color(0xFFEFB8C8)\n\nval Purple40 = Color(0xFF6650a4)\nval PurpleGrey40 = Color(0xFF625b71)\nval Pink40 = Color(0xFF7D5260)",
+    "snippetStartLine": 1,
+    "snippetEndLine": 11,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui.theme\n\nimport androidx.compose.ui.graphics.Color\n\nval Purple80 = Color(0xFFD0BCFF)\nval PurpleGrey80 = Color(0xFFCCC2DC)\nval Pink80 = Color(0xFFEFB8C8)\n\nval Purple40 = Color(0xFF6650a4)\nval PurpleGrey40 = Color(0xFF625b71)\nval Pink40 = Color(0xFF7D5260)",
+        "startLine": 1,
+        "endLine": 11
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/theme/Theme.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui.theme\n\nimport android.os.Build\nimport androidx.compose.foundation.isSystemInDarkTheme\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.darkColorScheme\nimport androidx.compose.material3.dynamicDarkColorScheme\nimport androidx.compose.material3.dynamicLightColorScheme\nimport androidx.compose.material3.lightColorScheme\nimport andr",
+    "snippetStartLine": 1,
+    "snippetEndLine": 10,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui.theme\n\nimport android.os.Build\nimport androidx.compose.foundation.isSystemInDarkTheme\nimport androidx.compose.material3.MaterialTheme\nimport androidx.compose.material3.darkColorScheme\nimport androidx.compose.material3.dynamicDarkColorScheme\nimport androidx.compose.material3.dynamicLightColorScheme\nimport androidx.compose.material3.lightColorScheme\nimport andr",
+        "startLine": 1,
+        "endLine": 10
+      },
+      {
+        "text": "ose.material3.dynamicLightColorScheme\nimport androidx.compose.material3.lightColorScheme\nimport androidx.compose.runtime.Composable\nimport androidx.compose.ui.platform.LocalContext\n\nprivate val DarkColorScheme = darkColorScheme(\n    primary = Purple80,\n    secondary = PurpleGrey80,\n    tertiary = Pink80,\n)\n\nprivate val LightColorScheme = lightColorScheme(\n    primary = Purple40,\n    secondary = Pu",
+        "startLine": 8,
+        "endLine": 21
+      },
+      {
+        "text": "nk80,\n)\n\nprivate val LightColorScheme = lightColorScheme(\n    primary = Purple40,\n    secondary = PurpleGrey40,\n    tertiary = Pink40,\n\n    /* Other default colors to override\n    background = Color(0xFFFFFBFE),\n    surface = Color(0xFFFFFBFE),\n    onPrimary = Color.White,\n    onSecondary = Color.White,\n    onTertiary = Color.White,\n    onBackground = Color(0xFF1C1B1F),\n    onSurface = Color(0xFF1",
+        "startLine": 16,
+        "endLine": 31
+      },
+      {
+        "text": "ite,\n    onTertiary = Color.White,\n    onBackground = Color(0xFF1C1B1F),\n    onSurface = Color(0xFF1C1B1F),\n    */\n)\n\n@Composable\nfun PasswordManagerTheme(\n    darkTheme: Boolean = isSystemInDarkTheme(),\n    // Dynamic color is available on Android 12+\n    dynamicColor: Boolean = true,\n    content: @Composable () -> Unit\n) {\n    val colorScheme = when {\n        (dynamicColor && Build.VERSION.SDK_I",
+        "startLine": 28,
+        "endLine": 43
+      },
+      {
+        "text": "@Composable () -> Unit\n) {\n    val colorScheme = when {\n        (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) -> {\n            val context = LocalContext.current\n            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)\n        }\n\n        darkTheme -> DarkColorScheme\n        else -> LightColorScheme\n    }\n\n    MaterialTheme(\n        colorSc",
+        "startLine": 40,
+        "endLine": 53
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/main/java/com/example/passwordmanager/ui/theme/Type.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager.ui.theme\n\nimport androidx.compose.material3.Typography\nimport androidx.compose.ui.text.TextStyle\nimport androidx.compose.ui.text.font.FontFamily\nimport androidx.compose.ui.text.font.FontWeight\nimport androidx.compose.ui.unit.sp\n\n// Set of Material typography styles to start with\nval Typography = Typography(\n    bodyLarge = TextStyle(\n        fontFamily = FontFam",
+    "snippetStartLine": 1,
+    "snippetEndLine": 12,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager.ui.theme\n\nimport androidx.compose.material3.Typography\nimport androidx.compose.ui.text.TextStyle\nimport androidx.compose.ui.text.font.FontFamily\nimport androidx.compose.ui.text.font.FontWeight\nimport androidx.compose.ui.unit.sp\n\n// Set of Material typography styles to start with\nval Typography = Typography(\n    bodyLarge = TextStyle(\n        fontFamily = FontFam",
+        "startLine": 1,
+        "endLine": 12
+      },
+      {
+        "text": "s to start with\nval Typography = Typography(\n    bodyLarge = TextStyle(\n        fontFamily = FontFamily.Default,\n        fontWeight = FontWeight.Normal,\n        fontSize = 16.sp,\n        lineHeight = 24.sp,\n        letterSpacing = 0.5.sp,\n    )\n    /* Other default text styles to override\n    titleLarge = TextStyle(\n        fontFamily = FontFamily.Default,\n        fontWeight = FontWeight.Normal,",
+        "startLine": 9,
+        "endLine": 22
+      },
+      {
+        "text": "arge = TextStyle(\n        fontFamily = FontFamily.Default,\n        fontWeight = FontWeight.Normal,\n        fontSize = 22.sp,\n        lineHeight = 28.sp,\n        letterSpacing = 0.sp\n    ),\n    labelSmall = TextStyle(\n        fontFamily = FontFamily.Default,\n        fontWeight = FontWeight.Medium,\n        fontSize = 11.sp,\n        lineHeight = 16.sp,\n        letterSpacing = 0.5.sp,\n    )\n    */\n)",
+        "startLine": 19,
+        "endLine": 34
+      }
+    ]
+  },
+  {
+    "uri": "/home/logan/AndroidStudioProjects/Vaulttest/app/src/test/java/com/example/passwordmanager/ExampleUnitTest.kt",
+    "symbols": [],
+    "snippet": "package com.example.passwordmanager\n\nimport org.junit.Test\n\nimport org.junit.Assert.*\n\n/**\n * Example local unit test, which will execute on the development machine (host).\n *\n * See [testing documentation](http://d.android.com/tools/testing).\n */\nclass ExampleUnitTest {\n    @Test\n    fun addition_isCorrect() {\n        assertEquals(4, 2 + 2)\n    }\n}",
+    "snippetStartLine": 1,
+    "snippetEndLine": 17,
+    "chunks": [
+      {
+        "text": "package com.example.passwordmanager\n\nimport org.junit.Test\n\nimport org.junit.Assert.*\n\n/**\n * Example local unit test, which will execute on the development machine (host).\n *\n * See [testing documentation](http://d.android.com/tools/testing).\n */\nclass ExampleUnitTest {\n    @Test\n    fun addition_isCorrect() {\n        assertEquals(4, 2 + 2)\n    }\n}",
+        "startLine": 1,
+        "endLine": 17
+      }
+    ]
+  }
+]
